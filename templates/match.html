@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect 4 Game</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="main {{ if .NewGameHTML }} disabled {{ end }} ">    
+        <h1>Connect 4 Match</h1>
+        <h2>{{ .Player1 }} vs {{ .Player2 }}</h2>
+
+        <h2 id="startPlayer">Turn: {{ .CurrPlayer }}</h2>
+        {{ .BoardHTML }}
+    </div>
+    {{ if .NewGameHTML }}
+    <div class="nav-modal">
+        {{ .NewGameHTML }}
+    </div>
+    {{ end }}
+    <script type="text/javascript" src="/static/js/match.js"></script>
+</body>
+</html>

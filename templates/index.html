@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Connect 4 Game</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="main">
+        <h1>Connect 4 Game</h1>
+        <div style="justify-content: center; text-align: center;">
+
+            <div style="flex: auto; flex-direction: row; justify-content: auto;">
+                <div>
+                    <h2>Play Local</h2>
+                    <div>
+                        <label>Player A Name </label>
+                        <input id="playerAName" type="text" value=""/>
+                    </div>
+                    <div>
+                        <label>Player B Name </label>
+                        <input id="playerBName" type="text" value=""/>
+                    </div>
+                    <button onclick=handleCreateGame()>Submit</button>
+                </div>
+                <div>
+                    <h2>Play Remote</h2>
+                    <button>Create A Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/static/js/index.js"></script>
+</body>
+</html>

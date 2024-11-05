@@ -7,19 +7,26 @@ import (
 
 type Game struct {
 	moveCount   int
-	player1     string
-	player2     string
+	Player1     string
+	Player2     string
 	startPlayer string
 	winner      string
 	moves       []int
 	board       []int
 }
 
-func NewGame(player1 string, player2 string) *Game {
+func GetBoard(game *Game) []int {
+
+	boardCopy := make([]int, len(game.board))
+	copy(boardCopy, game.board)
+	return boardCopy
+}
+
+func NewGame(Player1 string, Player2 string) *Game {
 	return &Game{
-		player1:     player1,
-		player2:     player2,
-		startPlayer: player1,
+		Player1:     Player1,
+		Player2:     Player2,
+		startPlayer: Player1,
 		moveCount:   0,
 		moves:       []int{},
 		board:       make([]int, 42),
@@ -52,18 +59,23 @@ func GetAxisCount(game *Game, index int, shift int) int {
 	count := 0
 	for i < 42 && game.board[i] == game.board[index] {
 		count += 1
+		if i%7 == 0 {
+			break
+		}
 		i += shift
 	}
 	i = index
 	for i > -1 && game.board[i] == game.board[index] {
 		count += 1
+		if i%7 == 6 {
+			break
+		}
 		i += -shift
 	}
 	return count - 1
 }
 
 func IsWinner(game *Game, index int) bool {
-	println("The index is ", index)
 	// vertical
 	count := 0
 	count = GetAxisCount(game, index, 7)
@@ -76,7 +88,7 @@ func IsWinner(game *Game, index int) bool {
 		return true
 	}
 	// positive diagonal
-	count = GetAxisCount(game, index, 4)
+	count = GetAxisCount(game, index, 6)
 	if count >= 4 {
 		return true
 	}
@@ -87,6 +99,13 @@ func IsWinner(game *Game, index int) bool {
 
 func GetWinner(game *Game) string {
 	return game.winner
+}
+
+func IsGameOver(game *Game) bool {
+	if len(game.moves) == 42 {
+		return true
+	}
+	return GetWinner(game) != ""
 }
 
 func MakeMove(game *Game, player string, move int) error {
@@ -134,8 +153,12 @@ func ShowGame(game *Game) {
 }
 
 func GetCurrPlayer(game *Game) string {
-	if IsPlayerTurn(game, game.player1) {
-		return game.player1
+	if IsPlayerTurn(game, game.Player1) {
+		return game.Player1
 	}
-	return game.player2
+	return game.Player2
+}
+
+func GetMoves(game *Game) []int {
+	return game.moves
 }
