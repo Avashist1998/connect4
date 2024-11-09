@@ -56,21 +56,24 @@ func IsMoveValid(game *Game, move int) bool {
 
 func GetAxisCount(game *Game, index int, shift int) int {
 	i := index
+	col := index % 7
 	count := 0
 	for i < 42 && game.board[i] == game.board[index] {
 		count += 1
-		if i%7 == 0 {
+		i += shift
+		if (col == 0 && i%7 == 6) || (col == 6 && i%7 == 0) {
 			break
 		}
-		i += shift
+		col = i % 7
 	}
 	i = index
 	for i > -1 && game.board[i] == game.board[index] {
 		count += 1
-		if i%7 == 6 {
+		i += -shift
+		if (col == 0 && i%7 == 6) || (col == 6 && i%7 == 0) {
 			break
 		}
-		i += -shift
+		col = i % 7
 	}
 	return count - 1
 }
@@ -161,4 +164,15 @@ func GetCurrPlayer(game *Game) string {
 
 func GetMoves(game *Game) []int {
 	return game.moves
+}
+
+func UpdateNames(game *Game, player1 string, player2 string) {
+
+	if game.Player1 == game.startPlayer {
+		game.startPlayer = player1
+	} else {
+		game.startPlayer = player2
+	}
+	game.Player1 = player1
+	game.Player2 = player2
 }
