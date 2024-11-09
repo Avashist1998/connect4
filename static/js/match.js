@@ -1,5 +1,3 @@
-
-
 var currPlayer = document.getElementById("startPlayer").innerHTML.replace("Turn: ", "");
 console.log(`the current player is ${currPlayer}`)
 
@@ -60,7 +58,7 @@ const addRestartEventHandler = () => {
 
     if (newGame !== null) {
         newGame.addEventListener("click", () => {
-            window.location.href = "http://localhost:9080"
+            window.location.href = "https://connect4.avashist.com"
         })
     }
 }

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect 4 Game</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body>
+    <div class="main">
+        <h1>Connect 4 live</h1>
+        <h2>Match {{ .MatchID }}</h2>
+        <div class="join" id="joinModal">
+            <input id="playerName" placeholder="You Name" type="text" />
+            <button onclick=onClickJoin()>Join</button>
+        </div>
+        <div id="loading">
+            <h3>Waiting for player...</h3>
+            <div class="spinner"></div>
+        </div>
+        <div id="game" style="display: none;">
+            <div class="profile-bar">
+                <h2 id="homePlayer"></h2><span>vs</span>
+                <h2 id="awayPlayer"></h2>
+            </div>
+            <div class="board">
+                <div class="board">
+                    <div class="col" id="col-0">
+                        <div class="cell empty" id="cell-35">
+                        </div>
+                        <div class="cell empty" id="cell-28">
+                        </div>
+                        <div class="cell empty" id="cell-21">
+                        </div>
+                        <div class="cell empty" id="cell-14">
+                        </div>
+                        <div class="cell empty" id="cell-7">
+                        </div>
+                        <div class="cell empty" id="cell-0">
+                        </div>
+                    </div>
+                    <div class="col" id="col-1">
+                        <div class="cell empty" id="cell-36">
+                        </div>
+                        <div class="cell empty" id="cell-29">
+                        </div>
+                        <div class="cell empty" id="cell-22">
+                        </div>
+                        <div class="cell empty" id="cell-15">
+                        </div>
+                        <div class="cell empty" id="cell-8">
+                        </div>
+                        <div class="cell empty" id="cell-1">
+                        </div>
+                    </div>
+                    <div class="col" id="col-2">
+                        <div class="cell empty" id="cell-37">
+                        </div>
+                        <div class="cell empty" id="cell-30">
+                        </div>
+                        <div class="cell empty" id="cell-23">
+                        </div>
+                        <div class="cell empty" id="cell-16">
+                        </div>
+                        <div class="cell empty" id="cell-9">
+                        </div>
+                        <div class="cell empty" id="cell-2">
+                        </div>
+                    </div>
+                    <div class="col" id="col-3">
+                        <div class="cell empty" id="cell-38">
+                        </div>
+                        <div class="cell empty" id="cell-31">
+                        </div>
+                        <div class="cell empty" id="cell-24">
+                        </div>
+                        <div class="cell empty" id="cell-17">
+                        </div>
+                        <div class="cell empty" id="cell-10">
+                        </div>
+                        <div class="cell empty" id="cell-3">
+                        </div>
+                    </div>
+                    <div class="col" id="col-4">
+                        <div class="cell empty" id="cell-39">
+                        </div>
+                        <div class="cell empty" id="cell-32">
+                        </div>
+                        <div class="cell empty" id="cell-25">
+                        </div>
+                        <div class="cell empty" id="cell-18">
+                        </div>
+                        <div class="cell empty" id="cell-11">
+                        </div>
+                        <div class="cell empty" id="cell-4">
+                        </div>
+                    </div>
+                    <div class="col" id="col-5">
+                        <div class="cell empty" id="cell-40">
+                        </div>
+                        <div class="cell empty" id="cell-33">
+                        </div>
+                        <div class="cell empty" id="cell-26">
+                        </div>
+                        <div class="cell empty" id="cell-19">
+                        </div>
+                        <div class="cell empty" id="cell-12">
+                        </div>
+                        <div class="cell empty" id="cell-5">
+                        </div>
+                    </div>
+                    <div class="col" id="col-6">
+                        <div class="cell empty" id="cell-41">
+                        </div>
+                        <div class="cell empty" id="cell-34">
+                        </div>
+                        <div class="cell empty" id="cell-27">
+                        </div>
+                        <div class="cell empty" id="cell-20">
+                        </div>
+                        <div class="cell empty" id="cell-13">
+                        </div>
+                        <div class="cell empty" id="cell-6">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="nav-modal" style="display: none">
+        <div class="gameOver">
+            <h2 id="gameOverHeading"></h2>
+            <button id="homeButton">Home</button>
+            <button id="newGame">New Game</button>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="/static/js/live.js"></script>
+
+</html>

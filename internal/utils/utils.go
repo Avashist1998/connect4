@@ -48,11 +48,11 @@ func GenerateBoardHTML(board []int) string {
 		for j := 5; j > -1; j -= 1 {
 			index := (j * 7) + i
 			if board[index] == 1 {
-				html += "<div class='cell player1' id='cell-" + strconv.Itoa(i) + "'>\n </div>\n"
+				html += "<div class='cell player1' id='cell-" + strconv.Itoa(index) + "'>\n </div>\n"
 			} else if board[index] == -1 {
-				html += "<div class='cell player2' id='cell-" + strconv.Itoa(i) + "'>\n </div>\n"
+				html += "<div class='cell player2' id='cell-" + strconv.Itoa(index) + "'>\n </div>\n"
 			} else {
-				html += "<div class='cell empty' id='cell-" + strconv.Itoa(i) + "'>\n </div>\n"
+				html += "<div class='cell empty' id='cell-" + strconv.Itoa(index) + "'>\n </div>\n"
 			}
 		}
 		html += "</div>\n"
@@ -83,4 +83,11 @@ func ReturnJson(w http.ResponseWriter, response map[string]string, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(response)
+}
+
+func AbsInt64(x int64) int64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"4connect/internal/game"
 	"4connect/internal/models"
+	"4connect/internal/store"
 	"4connect/internal/utils"
 	"encoding/json"
 	"html/template"
@@ -11,8 +12,6 @@ import (
 	"net/http"
 	"strings"
 )
-
-var datastore = make(map[string]*game.Game)
 
 func MatchHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -33,7 +32,7 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
+		datastore := store.GetDataStore()
 		newGame := game.NewGame(data.Player1, data.Player2)
 		id := utils.GenerateMatchId(datastore)
 		datastore[id] = newGame
@@ -48,8 +47,8 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 
 func MatchPlayHandler(w http.ResponseWriter, r *http.Request) {
 
-	path := strings.TrimPrefix(r.URL.Path, "/match/")
-	matchID := path
+	matchID := strings.TrimPrefix(r.URL.Path, "/match/")
+	datastore := store.GetDataStore()
 	match, ok := datastore[matchID]
 	// Check if the match exists in the datastore
 	if !ok {
