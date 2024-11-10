@@ -3,33 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>Connect 4 Game</title>
+    <title>Connect 4</title>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <div class="main">
-        <h1>Connect 4 Game</h1>
-        <div style="justify-content: center; text-align: center;">
-
-            <div style="flex: auto; flex-direction: row; justify-content: auto;">
+        <h1>Connect 4</h1>
+        <div id="gameSelection">
+            <div id="playLocal">
+                <h2>Play Local</h2>
                 <div>
-                    <h2>Play Local</h2>
-                    <div>
-                        <label>Player A Name </label>
-                        <input id="playerAName" type="text" value=""/>
-                    </div>
-                    <div>
-                        <label>Player B Name </label>
-                        <input id="playerBName" type="text" value=""/>
-                    </div>
-                    <button onclick=handleCreateGame()>Submit</button>
+                    <label>Player A Name </label>
+                    <input id="playerAName" type="text" value=""/>
                 </div>
                 <div>
-                    <h2>Play Remote</h2>
-                    <button onclick=handleCreateLiveGame()>Create A Game</button>
+                    <label>Player B Name </label>
+                    <input id="playerBName" type="text" value=""/>
                 </div>
+                <button onclick=handleCreateGame()>Submit</button>
             </div>
+            <div id="playWithFriend">
+                <h2>Play with a Friend</h2>
+                <button onclick=handleCreateLiveGame()>Create A Game</button>
+            </div>
+
         </div>
     </div>
     <script type="text/javascript" src="/static/js/index.js"></script>

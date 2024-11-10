@@ -130,11 +130,14 @@
         </div>
     </div>
     <div class="nav-modal" style="display: none">
-        <div class="gameOver">
-            <h2 id="gameOverHeading"></h2>
-            <button id="homeButton">Home</button>
-            <button id="newGame">New Game</button>
-        </div>
+        <h2 id="gameOverHeading"></h2>
+        <button id="homeButton" onclick=handleClickHome()>Home</button>
+        <button id="rematchButton" onclick=handleClickRematch()>Rematch</button>
+    </div>
+    <div id="rematchModal" style="display: none">
+        <h2 id="Rematch"></h2>
+        <button id="rematchAccept" onclick=rematchResponse(true)>Accept</button>
+        <button id="rematchReject" onclick=rematchResponse(false)>Reject</button>
     </div>
 </body>
 <script type="text/javascript" src="/static/js/live.js"></script>

@@ -45,33 +45,36 @@ func handleJoinMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 
 		for _, c := range conns {
 			startMessage := map[string]interface{}{
-				"message":     "Game Started",
-				"board":       game.GetBoard(match),
-				"curr_player": game.GetCurrPlayer(match),
-				"player1":     match.Player1,
-				"player2":     match.Player2,
+				"message":    "Game Started",
+				"board":      game.GetBoard(match),
+				"currPlayer": game.GetCurrPlayer(match),
+				"player1":    match.Player1,
+				"player2":    match.Player2,
 			}
 			c.Conn.WriteJSON(startMessage)
 		}
 		return
 	}
 	// reconnect logic
-	for _, c := range conns {
-		if c.Player == msg.Player {
-			c.Conn = conn
-			c.Time = time.Now().UnixMilli()
-			startMessage := map[string]interface{}{
-				"message":     "Game Started",
-				"board":       game.GetBoard(match),
-				"curr_player": game.GetCurrPlayer(match),
-				"player1":     match.Player1,
-				"player2":     match.Player2,
-			}
-			c.Conn.WriteJSON(startMessage)
-			return
-		}
+	conns = connectionLookup[msg.MatchID]
+	if conns[0].Player == msg.Player {
+		conns[0].Conn = conn
+		conns[0].Time = time.Now().UnixMilli()
+	} else if conns[1].Player == msg.Player {
+		conns[1].Conn = conn
+		conns[1].Time = time.Now().UnixMilli()
+	} else {
+		conn.Close()
+		return
 	}
-	conn.Close()
+	startMessage := map[string]interface{}{
+		"message":    "Game Started",
+		"board":      game.GetBoard(match),
+		"currPlayer": game.GetCurrPlayer(match),
+		"player1":    match.Player1,
+		"player2":    match.Player2,
+	}
+	conn.WriteJSON(startMessage)
 }
 
 func handlePingMessage(conn *websocket.Conn, msg models.Message) {
@@ -121,17 +124,17 @@ func handleMoveMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 
 	if err != nil {
 		failedMove := map[string]interface{}{
-			"message":        err.Error(),
-			"board":          game.GetBoard(match),
-			"current_player": game.GetCurrPlayer(match),
+			"message":    err.Error(),
+			"board":      game.GetBoard(match),
+			"currPlayer": game.GetCurrPlayer(match),
 		}
 		conn.WriteJSON(failedMove)
 	}
 
 	updateMessage := map[string]interface{}{
-		"message":     "Update Game",
-		"board":       game.GetBoard(match),
-		"curr_player": game.GetCurrPlayer(match),
+		"message":    "Update Game",
+		"board":      game.GetBoard(match),
+		"currPlayer": game.GetCurrPlayer(match),
 	}
 	for _, c := range data {
 		c.Conn.WriteJSON(updateMessage)
@@ -144,7 +147,45 @@ func handleMoveMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 		}
 		for _, c := range data {
 			c.Conn.WriteJSON(gameOverMessage)
-			c.Conn.Close()
+		}
+	}
+}
+
+func handleRematchMessage(conn *websocket.Conn, msg models.Message) {
+	data, ok := connectionLookup[msg.MatchID]
+	if !ok {
+		fmt.Printf("Match id: %s does not exists", msg.MatchID)
+		conn.Close()
+	}
+
+	if msg.Message == "request" {
+		for _, c := range data {
+			if c.Player != msg.Player {
+				requestMessage := map[string]interface{}{
+					"message": "ReMatch Request",
+				}
+				c.Conn.WriteJSON(requestMessage)
+			}
+		}
+	} else {
+		if msg.Message != "accept" {
+			for _, c := range data {
+				c.Conn.Close()
+			}
+			return
+		}
+		datastore := store.GetDataStore()
+		datastore[msg.MatchID] = game.NewGame(data[1].Player, data[0].Player)
+		match := datastore[msg.MatchID]
+		for _, c := range data {
+			startMessage := map[string]interface{}{
+				"message":    "Game Started",
+				"board":      game.GetBoard(match),
+				"currPlayer": game.GetCurrPlayer(match),
+				"player1":    match.Player1,
+				"player2":    match.Player2,
+			}
+			c.Conn.WriteJSON(startMessage)
 		}
 	}
 }
@@ -160,6 +201,8 @@ func wsMessageHandler(conn *websocket.Conn) {
 			fmt.Println("Error reading message:", err)
 			return
 		}
+
+		log.Printf("type: %s, message: %s", msg.Type, msg.Message)
 		datastore := store.GetDataStore()
 		match, ok := datastore[msg.MatchID]
 		if !ok {
@@ -174,6 +217,8 @@ func wsMessageHandler(conn *websocket.Conn) {
 			handleMoveMessage(conn, msg, match)
 		case models.PingMessageType:
 			handlePingMessage(conn, msg)
+		case models.RematchMessageType:
+			handleRematchMessage(conn, msg)
 		default:
 			fmt.Println("Unknown message type:", msg.Type)
 		}

@@ -111,3 +111,19 @@
 #game {
     display: none;
 }
+
+
+#playLocal {
+    flex: 1;
+    margin-right: 20px;
+}
+
+#playWithFriend {
+    flex: 1;
+}
+
+#gameSelection {
+    display: flex; 
+    flex-direction: row; 
+    justify-content: space-between;
+}

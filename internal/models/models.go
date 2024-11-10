@@ -32,9 +32,10 @@ type PlayerConnection struct {
 }
 
 const (
-	JoinMessageType = "join"
-	MoveMessageType = "move"
-	PingMessageType = "ping"
+	JoinMessageType    = "join"
+	MoveMessageType    = "move"
+	PingMessageType    = "ping"
+	RematchMessageType = "rematch"
 )
 
 type LivePageData struct {

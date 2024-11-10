@@ -38,8 +38,11 @@ const joinUIUpdate = (messageData) => {
     }
     document.getElementById("loading").style.display = 'none';
     document.getElementById("game").style.display = 'block';
+    document.getElementById("rematchModal").style.display = "none"
+    document.querySelector(".nav-modal").style.display = "none"
+    document.querySelector(".main").classList = "main"
     updateGrid(messageData.board);
-    updatePlayerTurn(messageData.curr_player);
+    updatePlayerTurn(messageData.currPlayer);
 }
 
 
@@ -77,9 +80,12 @@ const initializeSocket = () => {
             joinUIUpdate(messageData);
         } else if (messageData.message == "Update Game") {
             updateGrid(messageData.board);
-            updatePlayerTurn(messageData.curr_player);
+            updatePlayerTurn(messageData.currPlayer);
         } else if (messageData.message == "Game Over") {
             gameOverUpdate(messageData)
+        } else if (messageData.message == "ReMatch Request") {
+            document.querySelector(".nav-modal").style.display = "none"
+            document.getElementById("rematchModal").style.display = "block"
         }
     };
 
@@ -89,6 +95,7 @@ const initializeSocket = () => {
     
     socket.onclose = function () {
         console.log("WebSocket connection closed");
+        window.location.href = "https://connect4.avashist.com"
     };
 };
 
@@ -100,6 +107,8 @@ const sendPing = (playerName) => {
     const matchID = window.location.href.split("/").pop()
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({Type: "ping", Player: playerName, MatchID: matchID}))
+    }  else {
+        console.error("WebSocket is not connected");
     }
 }
 
@@ -115,7 +124,6 @@ const sendMove = (player, move) => {
 
 
 const onClickJoin = () => {
-
     const matchID = window.location.href.split("/").pop()
     let playerName = document.getElementById("playerName").value;
     document.getElementById("joinModal").style.display = "none";
@@ -125,5 +133,56 @@ const onClickJoin = () => {
         setInterval(() => {sendPing(playerName)}, 5000);
         addColumnClickListeners()
 
+    }
+}
+
+const handleClickHome = () => {
+    window.location.href = "https://connect4.avashist.com"
+}
+
+const createGame = async (player1, player2) => {
+    let res = await fetch("https://connect4.avashist.com/match", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            "Player1": player1,
+            "Player2": player2,
+            "StartPlayer": "",
+        }),
+    });
+
+    if (res.status != 200) {
+        console.log("Some error occurred with the call");
+        throw new Error("Failed to create the game");
+    }
+
+    let data = await res.json();
+    return data["match_id"];
+};
+
+
+const handleClickRematch = () => {
+    const matchID = window.location.href.split("/").pop()
+    let playerName = document.getElementById("homePlayer").innerHTML;
+    console.log("This was triggered ", playerName)
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({Type: "rematch", Player: playerName, Message: "request", MatchID: matchID}));
+    } else {
+        console.error("WebSocket is not connected");
+    }
+}
+
+
+const rematchResponse = (res) => {
+    const matchID = window.location.href.split("/").pop()
+    let playerName = document.getElementById("homePlayer").innerHTML;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        if (res === true) {
+            socket.send(JSON.stringify({Type: "rematch", Player: playerName, Message: "accept", MatchID: matchID}));
+        } else {
+            socket.send(JSON.stringify({Type: "rematch", Player: playerName, Message: "reject", MatchID: matchID}));
+        }
+    } else {
+        console.error("WebSocket is not connected");
     }
 }
