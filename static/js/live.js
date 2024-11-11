@@ -1,20 +1,5 @@
 let socket = null
 
-
-const updateGrid = (board) => {
-    for (let [index, val] of board.entries()) {
-        cell = document.getElementById(`cell-${index}`)
-        if (val == 1) {
-            cell.className = 'cell player1';
-        } else if (val == -1) {
-            cell.className = 'cell player2';
-        } else {
-            cell.className = 'cell empty';
-        }
-    }
-}
-
-
 const updatePlayerTurn = (currPlayer) => {
     let playerName = document.getElementById("homePlayer").innerHTML
     console.log(currPlayer, playerName)
@@ -36,12 +21,13 @@ const joinUIUpdate = (messageData) => {
     } else {
         document.getElementById("awayPlayer").innerHTML = messageData["player1"]
     }
-    document.getElementById("loading").style.display = 'none';
+    document.getElementById("waitingScreen").hide();
     document.getElementById("game").style.display = 'block';
     document.getElementById("rematchModal").style.display = "none"
     document.querySelector(".nav-modal").style.display = "none"
     document.querySelector(".main").classList = "main"
-    updateGrid(messageData.board);
+    const boardElement = document.getElementById('game-board');
+    boardElement.updateGrid(messageData.board);
     updatePlayerTurn(messageData.currPlayer);
 }
 
@@ -79,7 +65,8 @@ const initializeSocket = () => {
         if (messageData.message == "Game Started") {
             joinUIUpdate(messageData);
         } else if (messageData.message == "Update Game") {
-            updateGrid(messageData.board);
+            const boardElement = document.getElementById('game-board');
+            boardElement.updateGrid(messageData.board);
             updatePlayerTurn(messageData.currPlayer);
         } else if (messageData.message == "Game Over") {
             gameOverUpdate(messageData)
@@ -95,7 +82,7 @@ const initializeSocket = () => {
     
     socket.onclose = function () {
         console.log("WebSocket connection closed");
-        window.location.href = "https://connect4.avashist.com"
+        // window.location.href = "https://connect4.avashist.com"
     };
 };
 
@@ -127,12 +114,13 @@ const onClickJoin = () => {
     const matchID = window.location.href.split("/").pop()
     let playerName = document.getElementById("playerName").value;
     document.getElementById("joinModal").style.display = "none";
-    document.getElementById("loading").style.display = "block";
+    document.getElementById("waitingScreen").show();
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({Type: "join", Player: playerName, MatchID: matchID}))
         setInterval(() => {sendPing(playerName)}, 5000);
         addColumnClickListeners()
-
+    } else {
+        handleClickHome()
     }
 }
 
