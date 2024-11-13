@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="https://static.thenounproject.com/png/1579985-200.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect 4 Game</title>
@@ -10,33 +11,46 @@
 </head>
 
 <body>
-    <div class="main">
-        <h1>Connect 4 live</h1>
-        <h2>Match {{ .MatchID }}</h2>
-        <div class="join" id="joinModal">
-            <input id="playerName" placeholder="You Name" type="text" />
-            <button onclick=onClickJoin()>Join</button>
-        </div>
-        <waiting-screen id="waitingScreen" message="Waiting for player..." ></waiting-screen>
-        <div id="game" style="display: none;">
-            <div class="profile-bar">
-                <h2 id="homePlayer"></h2><span>vs</span>
-                <h2 id="awayPlayer"></h2>
+    <div id="body">
+        <div class="main">
+            <h1>Connect 4 live</h1>
+            <h2>Match {{ .MatchID }}</h2>
+            <div class="join" id="joinModal">
+                <div id="joinForm">
+                    <h2>Join Game</h2>
+                    <input id="playerName" placeholder="You Name" type="text" />
+                    <button onclick=onClickJoin()>Join</button>
+                </div>
+                <div id="inviteModal">
+                    <h2>Invite</h2>
+                    <button id="copyButton" >Copy Invitation</button>
+                    <h4>Scan</h4>
+                    <div id="qrcode"></div>
+                </div>
             </div>
-            <game-board id="game-board"></game-board>
+            <waiting-screen id="waitingScreen" message="Waiting for player..." ></waiting-screen>
+            <div id="game" style="display: none;">
+                <div class="profile-bar">
+                    <h2 id="homePlayer"></h2><span>vs</span>
+                    <h2 id="awayPlayer"></h2>
+                </div>
+                <game-board id="game-board"></game-board>
+            </div>
         </div>
-    </div>
-    <div class="nav-modal" style="display: none">
-        <h2 id="gameOverHeading"></h2>
-        <button id="homeButton" onclick=handleClickHome()>Home</button>
-        <button id="rematchButton" onclick=handleClickRematch()>Rematch</button>
-    </div>
-    <div id="rematchModal" style="display: none">
-        <h2 id="Rematch"></h2>
-        <button id="rematchAccept" onclick=rematchResponse(true)>Accept</button>
-        <button id="rematchReject" onclick=rematchResponse(false)>Reject</button>
+        <div id="gameOverModal" style="display: none">
+            <h2 id="gameOverHeading"></h2>
+            <button id="homeButton" onclick=handleClickHome()>Home</button>
+            <button id="rematchButton" onclick=handleClickRematch()>Rematch</button>
+        </div>
+        <div id="rematchModal" style="display: none">
+            <h2 id="Rematch"></h2>
+            <button id="rematchAccept" onclick=rematchResponse(true)>Accept</button>
+            <button id="rematchReject" onclick=rematchResponse(false)>Reject</button>
+        </div>
     </div>
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>var qrcode = new QRCode("qrcode", {text: window.location.href, width: 300, height: 300});</script>
 <script type="text/javascript" src="/static/js/live.js"></script>
 <script type="module" src="/static/js/components/gameBoard.js"></script>
 <script type="module" src="/static/js/components/waitingScreen.js"></script>

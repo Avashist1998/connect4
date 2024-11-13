@@ -6,6 +6,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect 4 Game</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .board {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .col {
+            display: flex;
+            flex-direction: column;
+            display: inline-block;
+        }
+        .col:hover {
+            /* background-color: gray; */
+            opacity: 0.5;
+        }
+        
+        .cell {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            background-color: blue;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .cell::before {
+            content: "";
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid black;
+        }
+        
+        .player1::before {
+            background-color: red;   
+        }
+        
+        .player2::before {
+            background-color: yellow;
+        }
+        
+        .empty::before {
+            background-color: white;
+        }
+    </style>
 </head>
 <body>
     <div class="main {{ if .NewGameHTML }} disabled {{ end }} ">
@@ -16,7 +64,7 @@
         {{ .BoardHTML }}
     </div>
     {{ if .NewGameHTML }}
-    <div class="nav-modal">
+    <div id="gameOverModal">
         {{ .NewGameHTML }}
     </div>
     {{ end }}

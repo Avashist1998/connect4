@@ -24,7 +24,7 @@ const joinUIUpdate = (messageData) => {
     document.getElementById("waitingScreen").hide();
     document.getElementById("game").style.display = 'block';
     document.getElementById("rematchModal").style.display = "none"
-    document.querySelector(".nav-modal").style.display = "none"
+    document.getElementById("gameOverModal").style.display = "none"
     document.querySelector(".main").classList = "main"
     const boardElement = document.getElementById('game-board');
     boardElement.updateGrid(messageData.board);
@@ -47,7 +47,7 @@ const addColumnClickListeners = () => {
 
 const gameOverUpdate = (messageData) => {
     document.querySelector(".main").classList += " disabled"
-    document.querySelector(".nav-modal").style.display = "block"
+    document.getElementById("gameOverModal").style.display = "block"
     if (messageData.winner === "") {
         document.getElementById("gameOverHeading").innerHTML = "Draw"
     } else {
@@ -71,7 +71,7 @@ const initializeSocket = () => {
         } else if (messageData.message == "Game Over") {
             gameOverUpdate(messageData)
         } else if (messageData.message == "ReMatch Request") {
-            document.querySelector(".nav-modal").style.display = "none"
+            document.getElementById("gameOverModal").style.display = "none"
             document.getElementById("rematchModal").style.display = "block"
         }
     };
@@ -82,7 +82,7 @@ const initializeSocket = () => {
     
     socket.onclose = function () {
         console.log("WebSocket connection closed");
-        // window.location.href = "https://connect4.avashist.com"
+        window.location.href = "https://connect4.avashist.com"
     };
 };
 
@@ -128,33 +128,15 @@ const handleClickHome = () => {
     window.location.href = "https://connect4.avashist.com"
 }
 
-const createGame = async (player1, player2) => {
-    let res = await fetch("https://connect4.avashist.com/match", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            "Player1": player1,
-            "Player2": player2,
-            "StartPlayer": "",
-        }),
-    });
-
-    if (res.status != 200) {
-        console.log("Some error occurred with the call");
-        throw new Error("Failed to create the game");
-    }
-
-    let data = await res.json();
-    return data["match_id"];
-};
-
 
 const handleClickRematch = () => {
     const matchID = window.location.href.split("/").pop()
     let playerName = document.getElementById("homePlayer").innerHTML;
-    console.log("This was triggered ", playerName)
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({Type: "rematch", Player: playerName, Message: "request", MatchID: matchID}));
+        document.getElementById("waitingScreen").updateMessage("Waiting for rematch message")
+        document.getElementById("waitingScreen").show();
+        document.getElementById("gameOverModal").style.display = "none"
     } else {
         console.error("WebSocket is not connected");
     }
@@ -174,3 +156,8 @@ const rematchResponse = (res) => {
         console.error("WebSocket is not connected");
     }
 }
+
+document.getElementById("copyButton").addEventListener("click", () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert("URL adding to clipboard, Share with friends")
+})

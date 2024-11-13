@@ -63,6 +63,5 @@ const addRestartEventHandler = () => {
     }
 }
 
-
 addColumnClickListeners()
 addRestartEventHandler()

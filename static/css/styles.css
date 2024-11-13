@@ -8,16 +8,68 @@
 }
 
 
-.nav-modal {
+#joinModal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+#qrcode {
+    margin-top: 10px;
+    width: 300px;
+    height: 300px;
+    display: block;
+}
+
+#joinForm, #inviteModal {
+    display: inline-block;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    border: 1px solid #ccc;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    min-height: 500px;
+    width: 300px;
+}
+
+#joinForm input[type="text"] {
+    width: 80%;
+}
+
+#joinForm button, #inviteModal button {
+    margin-top: 10px;
+}
+
+#gameOverModal {
     background-color: antiquewhite;
-    z-index: 10;  /* Increase z-index to make sure it's on top */
+    z-index: 10;
     border-color: black;
     border-width: 5px;
     text-align: center;
-    position: absolute;  /* Make the modal float on top */
-    top: 50%;  /* Adjust this to move it up or down */
+    position: absolute;
+    top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);  /* Center the modal */
+    transform: translate(-50%, -50%);
+    width: 250px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-radius: 10%;
+}
+
+
+#rematchModal {
+    background-color: antiquewhite;
+    z-index: 12;
+    border-color: black;
+    border-width: 5px;
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 250px;
     padding-top: 20px;
     padding-bottom: 20px;
@@ -32,11 +84,9 @@
     padding-bottom: 20px;
 }
 
-
 .profile-bar h2, .profile-bar span {
     margin: 0 10px;
 }
-
 
 
 #game {
@@ -49,9 +99,11 @@
     margin-right: 20px;
 }
 
+
 #playWithFriend {
     flex: 1;
 }
+
 
 #gameSelection {
     display: flex; 
