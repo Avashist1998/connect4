@@ -175,7 +175,12 @@ func handleRematchMessage(conn *websocket.Conn, msg models.Message) {
 			return
 		}
 		datastore := store.GetDataStore()
-		datastore[msg.MatchID] = game.NewGame(data[1].Player, data[0].Player)
+		if datastore[msg.MatchID].Player1 == data[0].Player {
+
+			datastore[msg.MatchID] = game.NewGame(data[1].Player, data[0].Player)
+		} else {
+			datastore[msg.MatchID] = game.NewGame(data[0].Player, data[1].Player)
+		}
 		match := datastore[msg.MatchID]
 		for _, c := range data {
 			startMessage := map[string]interface{}{
@@ -240,7 +245,7 @@ func LivePageHandler(w http.ResponseWriter, r *http.Request) {
 	datastore := store.GetDataStore()
 	_, ok := datastore[matchID]
 	if !ok {
-		response := map[string]string{
+		response := map[string]interface{}{
 			"message": "match does not exists",
 		}
 		utils.ReturnJson(w, response, http.StatusBadRequest)

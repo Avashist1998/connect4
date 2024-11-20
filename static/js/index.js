@@ -1,5 +1,7 @@
+const BASE_URL = "https://connect4.avashist.com"
+
 const createGame = async (player1, player2) => {
-    let res = await fetch("https://connect4.avashist.com/match", {
+    let res = await fetch(`${BASE_URL}/match`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -38,7 +40,7 @@ const handleCreateLiveGame = () => {
     createGame("anonymous", "anonymous").then((res) => {
         console.log(`the match ID is ${res}`);
         window.location.href +=  `live/${res}`; 
-    }).catch(() => {
+    }).catch((e) => {
         alert("Something went wrong")
     })
 }

@@ -79,7 +79,7 @@ func GenerateNewGameHTML(match *game.Game) string {
 	return html
 }
 
-func ReturnJson(w http.ResponseWriter, response map[string]string, status int) {
+func ReturnJson(w http.ResponseWriter, response map[string]interface{}, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(response)

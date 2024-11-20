@@ -1,19 +1,17 @@
-var currPlayer = document.getElementById("startPlayer").innerHTML.replace("Turn: ", "");
-console.log(`the current player is ${currPlayer}`)
+var currPlayer = document.getElementById("currPlayer").innerHTML;
 
 const addColumnClickListeners = () => {
     const columns = document.querySelectorAll('.col');
     columns.forEach(col => {
         col.addEventListener("click", () => {
-            const col_number = col.id.replace("col-", "") 
-            console.log(`Column Clicked: ${col_number}`)
-            makeMove(currPlayer, col_number).then(() => {
-                console.log("This is a person")
-                window.location.reload();
-            })
+            const col_number = Number(col.id.replace("col-", ""))
+            currPlayer = document.getElementById("currPlayer").innerHTML; 
+            console.log(`Player: ${currPlayer} Column Clicked: ${col_number}`)
+            makeMove(currPlayer, col_number)
         })
     })
 }
+
 
 const makeMove = async (player, move) => {
     let res = await fetch(window.location.href, {
@@ -27,15 +25,31 @@ const makeMove = async (player, move) => {
 
     if (res.status != 200) {
         console.log("Some error occurred with the call");
-        throw new Error("Failed to create the game");
+        throw new Error("Failed to create the game");  
     }
 
     let data = await res.json();
-    currPlayer = data["CurrPlayer"];
+    currPlayer = document.getElementById("currPlayer")
+    currPlayer.innerHTML = data.currPlayer
+    const boardElement = document.getElementById('gameBoard');
+    boardElement.updateGrid(data.board);
+    if (data.message == "Game Over") {
+        document.querySelector(".main").classList += " disabled"
+        document.getElementById("gameOverModal").style.display = "block"
+        if (data.winner === "") {
+            document.getElementById("gameOverHeading").innerHTML = "Draw"
+        } else {
+            document.getElementById("gameOverHeading").innerHTML = `Winner: ${data.winner}`
+        }
+    }
+
 }
 
+const handleClickHome = () => {
+    window.location.href = "https://connect4.avashist.com"
+}
 
-const resetGame = async () => {
+const handleClickRematch = async () => {
     let res = await fetch(window.location.href, {
         method: "DELETE",
     });
@@ -43,25 +57,12 @@ const resetGame = async () => {
         console.log("Some error occurred with the call");
         throw new Error("Failed to reset the game");
     }
-    console.log("I made it here and I was called")
     window.location.reload();
 } 
 
-const addRestartEventHandler = () => {
-    const reset = document.querySelector(".resetGame");
-    if (reset !== null) {
-        reset.addEventListener("click", () => {
-            resetGame()
-        })
-    }
-    const newGame = document.querySelector(".newGame");
+document.addEventListener("DOMContentLoaded", () => {
+    addColumnClickListeners();
+    document.getElementById("homeButton").addEventListener("click", handleClickHome)
+    document.getElementById("rematchButton").addEventListener("click", handleClickRematch)
+});
 
-    if (newGame !== null) {
-        newGame.addEventListener("click", () => {
-            window.location.href = "https://connect4.avashist.com"
-        })
-    }
-}
-
-addColumnClickListeners()
-addRestartEventHandler()

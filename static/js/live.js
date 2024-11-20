@@ -87,9 +87,6 @@ const initializeSocket = () => {
 };
 
 
-initializeSocket()
-
-
 const sendPing = (playerName) => {
     const matchID = window.location.href.split("/").pop()
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -109,6 +106,7 @@ const sendMove = (player, move) => {
     }
 };
 
+initializeSocket()
 
 const onClickJoin = () => {
     const matchID = window.location.href.split("/").pop()

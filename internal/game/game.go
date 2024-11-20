@@ -120,13 +120,10 @@ func MakeMove(game *Game, player string, move int) error {
 		return errors.New("cannot make this move")
 	}
 
-	if len(game.moves) == 42 {
-		return errors.New("no more moves available")
-	}
-
-	if game.winner != "" {
+	if len(game.moves) == 42 || game.winner != "" {
 		return errors.New("game is over")
 	}
+
 	val := 0
 	if game.moveCount%2 == 0 {
 		val = 1

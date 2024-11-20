@@ -6,68 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect 4 Game</title>
     <link rel="stylesheet" href="/static/css/styles.css">
-    <style>
-        .board {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .col {
-            display: flex;
-            flex-direction: column;
-            display: inline-block;
-        }
-        .col:hover {
-            /* background-color: gray; */
-            opacity: 0.5;
-        }
-        
-        .cell {
-            width: 60px;
-            height: 60px;
-            position: relative;
-            background-color: blue;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .cell::before {
-            content: "";
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 2px solid black;
-        }
-        
-        .player1::before {
-            background-color: red;   
-        }
-        
-        .player2::before {
-            background-color: yellow;
-        }
-        
-        .empty::before {
-            background-color: white;
-        }
-    </style>
 </head>
 <body>
-    <div class="main {{ if .NewGameHTML }} disabled {{ end }} ">
+    <div class="main">
         <h1>Connect 4 Match</h1>
         <h2>{{ .Player1 }} vs {{ .Player2 }}</h2>
-
-        <h2 id="startPlayer">Turn: {{ .CurrPlayer }}</h2>
-        {{ .BoardHTML }}
+        <h2 id="startPlayer">Turn: <span id="currPlayer">{{ .CurrPlayer }}</span></h2>
+        <game-board id="gameBoard"></game-board>
     </div>
-    {{ if .NewGameHTML }}
-    <div id="gameOverModal">
-        {{ .NewGameHTML }}
+    <div id="gameOverModal" style="display: none">
+        <h2 id="gameOverHeading"></h2>
+        <button id="homeButton">Home</button>
+        <button id="rematchButton">Rematch</button>
     </div>
-    {{ end }}
+    <script type="module" src="/static/js/components/gameBoard.js"></script>
     <script type="text/javascript" src="/static/js/match.js"></script>
 </body>
 </html>
