@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -175,13 +174,13 @@ func handleRematchMessage(conn *websocket.Conn, msg models.Message) {
 			return
 		}
 		datastore := store.GetDataStore()
-		if datastore[msg.MatchID].Player1 == data[0].Player {
+		if datastore[msg.MatchID].Game.Player1 == data[0].Player {
 
-			datastore[msg.MatchID] = game.NewGame(data[1].Player, data[0].Player)
+			datastore[msg.MatchID].Game = game.NewGame(data[1].Player, data[0].Player)
 		} else {
-			datastore[msg.MatchID] = game.NewGame(data[0].Player, data[1].Player)
+			datastore[msg.MatchID].Game = game.NewGame(data[0].Player, data[1].Player)
 		}
-		match := datastore[msg.MatchID]
+		match := datastore[msg.MatchID].Game
 		for _, c := range data {
 			startMessage := map[string]interface{}{
 				"message":    "Game Started",
@@ -209,12 +208,13 @@ func wsMessageHandler(conn *websocket.Conn) {
 
 		log.Printf("type: %s, message: %s", msg.Type, msg.Message)
 		datastore := store.GetDataStore()
-		match, ok := datastore[msg.MatchID]
+		data, ok := datastore[msg.MatchID]
 		if !ok {
 			fmt.Println("Match does not exists")
 			conn.Close()
 			return
 		}
+		match := data.Game
 		switch msg.Type {
 		case models.JoinMessageType:
 			handleJoinMessage(conn, msg, match)
@@ -237,20 +237,4 @@ func LiveWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	wsMessageHandler(conn)
-}
-
-func LivePageHandler(w http.ResponseWriter, r *http.Request) {
-	matchID := strings.TrimPrefix(r.URL.Path, "/live/")
-
-	datastore := store.GetDataStore()
-	_, ok := datastore[matchID]
-	if !ok {
-		response := map[string]interface{}{
-			"message": "match does not exists",
-		}
-		utils.ReturnJson(w, response, http.StatusBadRequest)
-		return
-	}
-	var data = models.LivePageData{MatchID: matchID}
-	utils.RenderTemplate(w, "live.html", data)
 }

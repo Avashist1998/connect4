@@ -5,10 +5,21 @@ import (
 	"4connect/internal/utils"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	utils.RenderTemplate(w, "index.html", nil)
+	path := strings.Trim(r.URL.Path, "/")
+	if path == "" {
+		switch r.Method {
+		case http.MethodGet:
+			utils.RenderTemplate(w, "index.html", nil)
+		case http.MethodPost:
+			handlers.MatchHandler(w, r)
+		}
+	} else {
+		handlers.MatchPlayHandler(w, r, path)
+	}
 }
 
 func main() {
@@ -17,9 +28,6 @@ func main() {
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/match", handlers.MatchHandler)
-	http.HandleFunc("/match/", handlers.MatchPlayHandler)
-	http.HandleFunc("/live/", handlers.LivePageHandler)
 	http.HandleFunc("/ws/live", handlers.LiveWebSocketHandler)
 	log.Println("Starting server on %s", port)
 	log.Fatal(http.ListenAndServe(port, nil))

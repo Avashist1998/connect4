@@ -2,6 +2,7 @@ package utils
 
 import (
 	"4connect/internal/game"
+	"4connect/internal/models"
 	"encoding/json"
 	"html/template"
 	"math/rand"
@@ -30,7 +31,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 }
 
-func GenerateMatchId(datastore map[string]*game.Game) string {
+func GenerateMatchId(datastore map[string]*models.Match) string {
 	var id = GenerateId(6)
 	_, ok := datastore[id]
 	for ok {

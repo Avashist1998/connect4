@@ -1,12 +1,14 @@
 package models
 
 import (
+	"4connect/internal/game"
 	"html/template"
 
 	"github.com/gorilla/websocket"
 )
 
-type MatchData struct {
+type MatchRequestData struct {
+	GameType    string
 	Player1     string
 	Player2     string
 	StartPlayer string
@@ -48,4 +50,9 @@ type Message struct {
 	Player  string `json:"player"`  // Player's name
 	Move    int    `json:"move"`    // Move (for MoveMessage)
 	Message string `json:"message"` // Message content (optional)
+}
+
+type Match struct {
+	Game     *game.Game
+	GameType string
 }

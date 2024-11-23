@@ -1,10 +1,11 @@
 const BASE_URL = "https://connect4.avashist.com"
 
-const createGame = async (player1, player2) => {
-    let res = await fetch(`${BASE_URL}/match`, {
+const createGame = async (type, player1, player2) => {
+    let res = await fetch(BASE_URL, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
+            "GameType": type,
             "Player1": player1,
             "Player2": player2,
             "StartPlayer": "", // You can set this to an actual value if needed
@@ -21,14 +22,14 @@ const createGame = async (player1, player2) => {
 };
 
 
-const handleCreateGame = () => {
+const handleCreateLocalGame = () => {
     let player1 = document.getElementById("playerAName").value;
     let player2 = document.getElementById("playerBName").value;
     
-    createGame(player1, player2)
-        .then((res) => {
-            console.log(`Player 1 ${player1}, Player 2 ${player2}, and the match ID is ${res}`);
-            window.location.href +=  `match/${res}`; 
+    createGame("local", player1, player2)
+        .then((matchID) => {
+            console.log(`Player 1 ${player1}, Player 2 ${player2}, and the match ID is ${matchID}`);
+            window.location.href +=  `${matchID}`; 
         })
         .catch(() => {
             alert("Something went wrong");  // Use an arrow function here to defer execution
@@ -37,7 +38,17 @@ const handleCreateGame = () => {
 
 
 const handleCreateLiveGame = () => {
-    createGame("anonymous", "anonymous").then((res) => {
+    createGame("live", "anonymous", "anonymous").then((matchID) => {
+        console.log(`the match ID is ${matchID}`);
+        window.location.href +=  `${matchID}`; 
+    }).catch((e) => {
+        alert("Something went wrong")
+    })
+}
+
+
+const handleCreateBotGame = () => {
+    createGame("bot", "anonymous", "anonymous").then((res) => {
         console.log(`the match ID is ${res}`);
         window.location.href +=  `live/${res}`; 
     }).catch((e) => {

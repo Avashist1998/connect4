@@ -6,6 +6,45 @@
     <link rel="icon" type="image/x-icon" href="https://static.thenounproject.com/png/1579985-200.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        #playWithComputer {
+            flex: 1;
+        }
+
+        .difficulty-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 20px auto;
+        font-family: Arial, sans-serif;
+        }
+
+        .difficulty-btn {
+        padding: 10px 20px;
+        font-size: 16px;
+        border: 2px solid #000;
+        border-radius: 5px;
+        background-color: #f0f0f0;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .difficulty-btn:hover {
+        background-color: #e0e0e0;
+        }
+
+        .difficulty-btn.active {
+        background-color: #4caf50;
+        color: #fff;
+        border-color: #4caf50;
+        transform: scale(1.1);
+        }
+
+        #selected-difficulty {
+        text-align: center;
+        font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <div class="main">
@@ -21,15 +60,42 @@
                     <label>Player B Name </label>
                     <input id="playerBName" type="text" value=""/>
                 </div>
-                <button onclick=handleCreateGame()>Submit</button>
+                <button onclick=handleCreateLocalGame()>Submit</button>
             </div>
             <div id="playWithFriend">
                 <h2>Play with a Friend</h2>
                 <button onclick=handleCreateLiveGame()>Create A Game</button>
             </div>
+            <div id="playWithComputer">
+                <h2>Play with Computer</h2>
+                <div class="difficulty-container">
+                    <button id="easy-btn" class="difficulty-btn">Easy</button>
+                    <button id="medium-btn" class="difficulty-btn active">Medium</button>
+                    <button id="hard-btn" class="difficulty-btn">Hard</button>
+                </div>
+                <div>
+                    <label>Player Name</label>
+                    <input id="playerAName" type="text" value=""/>
+                </div>
+                <button onclick=handleCreateBotGame() >Submit</button>
+            </div>
 
         </div>
     </div>
     <script type="text/javascript" src="/static/js/index.js"></script>
+    <script type="text/javascript">
+
+        var bot_level = "medium"
+        const buttons = document.querySelectorAll(".difficulty-btn");
+        const selectedDifficulty = document.getElementById("selected-difficulty");
+
+        buttons.forEach(button => {
+        button.addEventListener("click", () => {
+                buttons.forEach(btn => btn.classList.remove("active"));
+                button.classList.add("active");
+                selectedDifficulty.textContent = `Selected: ${button.textContent}`;
+            });
+        });
+    </script>
 </body>
 </html>

@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 )
 
 func MatchHandler(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +16,7 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 
 	case http.MethodPost:
-		var data models.MatchData
+		var data models.MatchRequestData
 		bodyBytes, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -32,9 +31,10 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		datastore := store.GetDataStore()
-		newGame := game.NewGame(data.Player1, data.Player2)
 		id := utils.GenerateMatchId(datastore)
-		datastore[id] = newGame
+		datastore[id] = &models.Match{
+			GameType: data.GameType,
+			Game:     game.NewGame(data.Player1, data.Player2)}
 		response := map[string]interface{}{
 			"match_id": id,
 		}
@@ -44,11 +44,10 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func MatchPlayHandler(w http.ResponseWriter, r *http.Request) {
+func MatchPlayHandler(w http.ResponseWriter, r *http.Request, matchID string) {
 
-	matchID := strings.TrimPrefix(r.URL.Path, "/match/")
 	datastore := store.GetDataStore()
-	match, ok := datastore[matchID]
+	data, ok := datastore[matchID]
 	// Check if the match exists in the datastore
 	if !ok {
 		response := map[string]interface{}{
@@ -58,6 +57,16 @@ func MatchPlayHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if data.GameType == "local" {
+		MatchLocalPlayHandler(w, r, matchID, data)
+	} else if data.GameType == "live" {
+		var data = models.LivePageData{MatchID: matchID}
+		utils.RenderTemplate(w, "live.html", data)
+	}
+}
+
+func MatchLocalPlayHandler(w http.ResponseWriter, r *http.Request, matchID string, matchData *models.Match) {
+	match := matchData.Game
 	switch r.Method {
 	case http.MethodGet:
 		var data = models.MatchPageData{
@@ -114,8 +123,7 @@ func MatchPlayHandler(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnJson(w, response, http.StatusOK)
 
 	case http.MethodDelete:
-		newGame := game.NewGame(match.Player1, match.Player2)
-		datastore[matchID] = newGame
+		matchData.Game = game.NewGame(match.Player1, match.Player2)
 		response := map[string]interface{}{
 			"message": "Game has been reset",
 		}
@@ -127,4 +135,5 @@ func MatchPlayHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		utils.ReturnJson(w, response, http.StatusMethodNotAllowed)
 	}
+
 }
