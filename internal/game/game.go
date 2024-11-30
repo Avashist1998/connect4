@@ -3,6 +3,7 @@ package game
 import (
 	"errors"
 	"log"
+	"math/rand"
 )
 
 type Game struct {
@@ -15,7 +16,7 @@ type Game struct {
 	board       []int
 }
 
-func GetBoard(game *Game) []int {
+func (game *Game) GetBoard() []int {
 
 	boardCopy := make([]int, len(game.board))
 	copy(boardCopy, game.board)
@@ -100,7 +101,7 @@ func IsWinner(game *Game, index int) bool {
 	return count >= 4
 }
 
-func GetWinner(game *Game) string {
+func (game *Game) GetWinner() string {
 	return game.winner
 }
 
@@ -108,7 +109,7 @@ func IsGameOver(game *Game) bool {
 	if len(game.moves) == 42 {
 		return true
 	}
-	return GetWinner(game) != ""
+	return game.GetWinner() != ""
 }
 
 func MakeMove(game *Game, player string, move int) error {
@@ -152,14 +153,14 @@ func ShowGame(game *Game) {
 	}
 }
 
-func GetCurrPlayer(game *Game) string {
+func (game *Game) GetCurrPlayer() string {
 	if IsPlayerTurn(game, game.Player1) {
 		return game.Player1
 	}
 	return game.Player2
 }
 
-func GetMoves(game *Game) []int {
+func (game *Game) GetMoves() []int {
 	return game.moves
 }
 
@@ -172,4 +173,12 @@ func UpdateNames(game *Game, player1 string, player2 string) {
 	}
 	game.Player1 = player1
 	game.Player2 = player2
+}
+
+func GetBotMove(game *Game, level string) int {
+	randomIndex := int(rand.Float32() * 6)
+	for !IsMoveValid(game, randomIndex) {
+		randomIndex = int(rand.Float32() * 6)
+	}
+	return randomIndex
 }

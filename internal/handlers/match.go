@@ -30,13 +30,10 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		datastore := store.GetDataStore()
-		id := utils.GenerateMatchId(datastore)
-		datastore[id] = &models.Match{
-			GameType: data.GameType,
-			Game:     game.NewGame(data.Player1, data.Player2)}
+		datastore := store.MatchManagerFactory()
+		var matchID string = datastore.CreateGame(data.Player1, data.Player2, data.Level, data.GameType)
 		response := map[string]interface{}{
-			"match_id": id,
+			"match_id": matchID,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -46,10 +43,9 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 
 func MatchPlayHandler(w http.ResponseWriter, r *http.Request, matchID string) {
 
-	datastore := store.GetDataStore()
-	data, ok := datastore[matchID]
-	// Check if the match exists in the datastore
-	if !ok {
+	datastore := store.MatchManagerFactory()
+	data, err := datastore.GetSessionData(matchID)
+	if err != nil {
 		response := map[string]interface{}{
 			"message": "invalid match id",
 		}
@@ -62,17 +58,86 @@ func MatchPlayHandler(w http.ResponseWriter, r *http.Request, matchID string) {
 	} else if data.GameType == "live" {
 		var data = models.LivePageData{MatchID: matchID}
 		utils.RenderTemplate(w, "live.html", data)
+	} else {
+		MatchBotPlayHandler(w, r, matchID, data)
 	}
 }
 
-func MatchLocalPlayHandler(w http.ResponseWriter, r *http.Request, matchID string, matchData *models.Match) {
+func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string, matchData *models.MatchSession) {
 	match := matchData.Game
 	switch r.Method {
 	case http.MethodGet:
 		var data = models.MatchPageData{
 			Player1:    match.Player1,
 			Player2:    match.Player2,
-			CurrPlayer: game.GetCurrPlayer(match),
+			CurrPlayer: match.GetCurrPlayer(),
+		}
+		utils.RenderTemplate(w, "match.html", data)
+	case http.MethodPost:
+		var data models.MoveData
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			response := map[string]interface{}{
+				"message": "invalid body",
+			}
+			utils.ReturnJson(w, response, http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("Request Body: %s", string(bodyBytes))
+
+		err = json.Unmarshal(bodyBytes, &data)
+		if err != nil {
+			response := map[string]interface{}{
+				"message": "Invalid JSON in request",
+			}
+			utils.ReturnJson(w, response, http.StatusBadRequest)
+			return
+		}
+		err = game.MakeMove(match, data.Player, data.Move)
+		if err != nil {
+			response := map[string]interface{}{
+				"message": "invalid move or game over",
+			}
+			utils.ReturnJson(w, response, http.StatusBadGateway)
+			return
+		}
+
+		move := game.GetBotMove(match, matchData.Level)
+		game.MakeMove(match, "bot", move)
+		response := map[string]interface{}{
+			"message":    "Move successfully updated",
+			"board":      match.GetBoard(),
+			"currPlayer": match.GetCurrPlayer(),
+			"winner":     "",
+		}
+
+		if game.IsGameOver(match) {
+			response = map[string]interface{}{
+				"message":    "Game Over",
+				"board":      match.GetBoard(),
+				"currPlayer": match.GetCurrPlayer(),
+				"winner":     match.GetWinner(),
+			}
+		}
+		utils.ReturnJson(w, response, http.StatusOK)
+	case http.MethodDelete:
+		matchData.Game = game.NewGame(match.Player1, match.Player2)
+		response := map[string]interface{}{
+			"message": "Game has been reset",
+		}
+		utils.ReturnJson(w, response, http.StatusOK)
+	}
+}
+
+func MatchLocalPlayHandler(w http.ResponseWriter, r *http.Request, matchID string, matchData *models.MatchSession) {
+	match := matchData.Game
+	switch r.Method {
+	case http.MethodGet:
+		var data = models.MatchPageData{
+			Player1:    match.Player1,
+			Player2:    match.Player2,
+			CurrPlayer: match.GetCurrPlayer(),
 		}
 		utils.RenderTemplate(w, "match.html", data)
 
@@ -107,17 +172,17 @@ func MatchLocalPlayHandler(w http.ResponseWriter, r *http.Request, matchID strin
 		}
 		response := map[string]interface{}{
 			"message":    "Move successfully updated",
-			"board":      game.GetBoard(match),
-			"currPlayer": game.GetCurrPlayer(match),
+			"board":      match.GetBoard(),
+			"currPlayer": match.GetCurrPlayer(),
 			"winner":     "",
 		}
 
 		if game.IsGameOver(match) {
 			response = map[string]interface{}{
 				"message":    "Game Over",
-				"board":      game.GetBoard(match),
-				"currPlayer": game.GetCurrPlayer(match),
-				"winner":     game.GetWinner(match),
+				"board":      match.GetBoard(),
+				"currPlayer": match.GetCurrPlayer(),
+				"winner":     match.GetWinner(),
 			}
 		}
 		utils.ReturnJson(w, response, http.StatusOK)

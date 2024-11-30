@@ -3,7 +3,6 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="https://static.thenounproject.com/png/1579985-200.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect 4 Game</title>
@@ -15,7 +14,7 @@
         <div class="main">
             <h1>Connect 4 live</h1>
             <h2>Match {{ .MatchID }}</h2>
-            <div class="join" id="joinModal">
+            <div id="joinModal">
                 <div id="joinForm">
                     <h2>Join Game</h2>
                     <input id="playerName" placeholder="You Name" type="text" />
@@ -30,8 +29,9 @@
             </div>
             <waiting-screen id="waitingScreen" message="Waiting for player..." ></waiting-screen>
             <div id="game" style="display: none;">
-                <div class="profile-bar">
-                    <h2 id="homePlayer"></h2><span>vs</span>
+                <div id="profileBar">
+                    <h2 id="homePlayer"></h2>
+                    <span>vs</span>
                     <h2 id="awayPlayer"></h2>
                 </div>
                 <game-board id="game-board"></game-board>

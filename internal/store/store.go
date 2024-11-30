@@ -1,11 +1,22 @@
 package store
 
 import (
-	"4connect/internal/models"
+	"4connect/internal/services"
 )
 
-var datastore = make(map[string]*models.Match)
+var gameLobby *services.Lobby
+var matchManager *services.MatchManager
 
-func GetDataStore() map[string]*models.Match {
-	return datastore
+func MatchManagerFactory() *services.MatchManager {
+	if matchManager == nil {
+		matchManager = services.MakeMatchManager()
+	}
+	return matchManager
+}
+
+func LobbyFactory() *services.Lobby {
+	if gameLobby == nil {
+		gameLobby = services.MakeLobby()
+	}
+	return gameLobby
 }

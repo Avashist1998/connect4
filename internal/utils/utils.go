@@ -1,13 +1,11 @@
 package utils
 
 import (
-	"4connect/internal/game"
 	"4connect/internal/models"
 	"encoding/json"
 	"html/template"
 	"math/rand"
 	"net/http"
-	"strconv"
 )
 
 func GenerateId(size int) string {
@@ -31,7 +29,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 }
 
-func GenerateMatchId(datastore map[string]*models.Match) string {
+func GenerateMatchId(datastore map[string]*models.MatchSession) string {
 	var id = GenerateId(6)
 	_, ok := datastore[id]
 	for ok {
@@ -39,45 +37,6 @@ func GenerateMatchId(datastore map[string]*models.Match) string {
 		_, ok = datastore[id]
 	}
 	return id
-}
-
-func GenerateBoardHTML(board []int) string {
-	var html string
-	html += "<div class='board'>\n"
-	for i := 0; i < 7; i += 1 {
-		html += "<div class='col' id='col-" + strconv.Itoa(i) + "'>\n"
-		for j := 5; j > -1; j -= 1 {
-			index := (j * 7) + i
-			if board[index] == 1 {
-				html += "<div class='cell player1' id='cell-" + strconv.Itoa(index) + "'>\n </div>\n"
-			} else if board[index] == -1 {
-				html += "<div class='cell player2' id='cell-" + strconv.Itoa(index) + "'>\n </div>\n"
-			} else {
-				html += "<div class='cell empty' id='cell-" + strconv.Itoa(index) + "'>\n </div>\n"
-			}
-		}
-		html += "</div>\n"
-	}
-	html += "</div>\n"
-	return html
-}
-
-func GenerateNewGameHTML(match *game.Game) string {
-
-	html := "<div class='gameOver'>"
-	if game.GetWinner(match) == "" {
-		html += "<h2>Result: Draw</h2>\n"
-		html += "<button class='resetGame'>Restart</button>\n"
-		html += "<button class='newGame'>New Game</button>\n"
-		html += "</div>\n"
-		return html
-	}
-	winner := game.GetWinner(match)
-	html += "<h2>Winner: " + winner + "</h2>\n"
-	html += "<button class='resetGame'>Restart</button>\n"
-	html += "<button class='newGame'>New Game</button>\n"
-	html += "</div>\n"
-	return html
 }
 
 func ReturnJson(w http.ResponseWriter, response map[string]interface{}, status int) {

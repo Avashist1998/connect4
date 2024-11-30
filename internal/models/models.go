@@ -12,6 +12,7 @@ type MatchRequestData struct {
 	Player1     string
 	Player2     string
 	StartPlayer string
+	Level       string
 }
 
 type MoveData struct {
@@ -52,7 +53,14 @@ type Message struct {
 	Message string `json:"message"` // Message content (optional)
 }
 
-type Match struct {
+type LobbyMessage struct {
+	Type    string `json:"type"`
+	Player  string `json:"player"`  // Player's name
+	Message string `json:"message"` // Message content (optional)
+}
+
+type MatchSession struct {
 	Game     *game.Game
+	Level    string
 	GameType string
 }

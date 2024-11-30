@@ -10,7 +10,7 @@ import (
 
 func RunGame() {
 	newGame := NewGame("Player1", "Player2")
-	player := GetCurrPlayer(newGame)
+	player := newGame.GetCurrPlayer()
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -40,12 +40,12 @@ func RunGame() {
 		println("===============")
 
 		// Check for a winner
-		if winner := GetWinner(newGame); winner != "" {
+		if winner := newGame.GetWinner(); winner != "" {
 			fmt.Printf("%s has won the game!\n", winner)
 			break // Exit the loop if there's a winner
 		}
 
 		// Switch to the next player
-		player = GetCurrPlayer(newGame)
+		player = newGame.GetCurrPlayer()
 	}
 }

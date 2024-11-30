@@ -1,12 +1,22 @@
 .main {
     justify-content: center;
     text-align: center;
+    display: flex;
+    flex-direction: column; 
+    align-items: center;    
+    justify-content: center;
+    text-align: center;
+    min-height: 100vh;
+    gap: 30px;
 }
 .main.disabled {
     pointer-events: none;
     opacity: 0.5;
 }
 
+#game {
+    display: none;
+}
 
 #joinModal {
     display: flex;
@@ -77,36 +87,38 @@
 }
 
 
-.profile-bar {
+#profileBar {
     display: flex;
     align-items: center;
     justify-content: center;
     padding-bottom: 20px;
 }
 
-.profile-bar h2, .profile-bar span {
+#profileBar h2, #profileBar span {
     margin: 0 10px;
 }
 
-
-#game {
-    display: none;
-}
-
-
-#playLocal {
-    flex: 1;
-    margin-right: 20px;
-}
-
-
-#playWithFriend {
-    flex: 1;
-}
-
-
 #gameSelection {
     display: flex; 
-    flex-direction: row; 
-    justify-content: space-between;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+    max-width: 1000px;
+}
+
+#playLocal, #playWithFriend, #playWithComputer {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    #gameSelection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .difficulty-container {
+        justify-content: space-around;
+    }
 }

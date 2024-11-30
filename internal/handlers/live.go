@@ -45,8 +45,8 @@ func handleJoinMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 		for _, c := range conns {
 			startMessage := map[string]interface{}{
 				"message":    "Game Started",
-				"board":      game.GetBoard(match),
-				"currPlayer": game.GetCurrPlayer(match),
+				"board":      match.GetBoard(),
+				"currPlayer": match.GetCurrPlayer(),
 				"player1":    match.Player1,
 				"player2":    match.Player2,
 			}
@@ -68,8 +68,8 @@ func handleJoinMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 	}
 	startMessage := map[string]interface{}{
 		"message":    "Game Started",
-		"board":      game.GetBoard(match),
-		"currPlayer": game.GetCurrPlayer(match),
+		"board":      match.GetBoard(),
+		"currPlayer": match.GetCurrPlayer(),
 		"player1":    match.Player1,
 		"player2":    match.Player2,
 	}
@@ -80,7 +80,6 @@ func handlePingMessage(conn *websocket.Conn, msg models.Message) {
 	data, ok := connectionLookup[msg.MatchID]
 
 	if !ok {
-		fmt.Printf("Match id: %s does not exists", msg.MatchID)
 		conn.Close()
 	}
 
@@ -124,16 +123,16 @@ func handleMoveMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 	if err != nil {
 		failedMove := map[string]interface{}{
 			"message":    err.Error(),
-			"board":      game.GetBoard(match),
-			"currPlayer": game.GetCurrPlayer(match),
+			"board":      match.GetBoard(),
+			"currPlayer": match.GetCurrPlayer(),
 		}
 		conn.WriteJSON(failedMove)
 	}
 
 	updateMessage := map[string]interface{}{
 		"message":    "Update Game",
-		"board":      game.GetBoard(match),
-		"currPlayer": game.GetCurrPlayer(match),
+		"board":      match.GetBoard(),
+		"currPlayer": match.GetCurrPlayer(),
 	}
 	for _, c := range data {
 		c.Conn.WriteJSON(updateMessage)
@@ -142,7 +141,7 @@ func handleMoveMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 	if game.IsGameOver(match) {
 		gameOverMessage := map[string]interface{}{
 			"message": "Game Over",
-			"winner":  game.GetWinner(match),
+			"winner":  match.GetWinner(),
 		}
 		for _, c := range data {
 			c.Conn.WriteJSON(gameOverMessage)
@@ -173,21 +172,21 @@ func handleRematchMessage(conn *websocket.Conn, msg models.Message) {
 			}
 			return
 		}
-		datastore := store.GetDataStore()
-		if datastore[msg.MatchID].Game.Player1 == data[0].Player {
-
-			datastore[msg.MatchID].Game = game.NewGame(data[1].Player, data[0].Player)
-		} else {
-			datastore[msg.MatchID].Game = game.NewGame(data[0].Player, data[1].Player)
+		datastore := store.MatchManagerFactory()
+		gameState, err := datastore.ResetGame(msg.MatchID, true)
+		if err != nil {
+			for _, c := range data {
+				c.Conn.Close()
+			}
+			return
 		}
-		match := datastore[msg.MatchID].Game
 		for _, c := range data {
 			startMessage := map[string]interface{}{
 				"message":    "Game Started",
-				"board":      game.GetBoard(match),
-				"currPlayer": game.GetCurrPlayer(match),
-				"player1":    match.Player1,
-				"player2":    match.Player2,
+				"board":      gameState.Board,
+				"currPlayer": gameState.CurrPlayer,
+				"player1":    gameState.PlayerAName,
+				"player2":    gameState.PlayerBName,
 			}
 			c.Conn.WriteJSON(startMessage)
 		}
@@ -206,15 +205,14 @@ func wsMessageHandler(conn *websocket.Conn) {
 			return
 		}
 
-		log.Printf("type: %s, message: %s", msg.Type, msg.Message)
-		datastore := store.GetDataStore()
-		data, ok := datastore[msg.MatchID]
-		if !ok {
+		// log.Printf("type: %s, message: %s", msg.Type, msg.Message)
+		datastore := store.MatchManagerFactory()
+		match, err := datastore.GetMatch(msg.MatchID)
+		if err != nil {
 			fmt.Println("Match does not exists")
 			conn.Close()
 			return
 		}
-		match := data.Game
 		switch msg.Type {
 		case models.JoinMessageType:
 			handleJoinMessage(conn, msg, match)
@@ -226,6 +224,8 @@ func wsMessageHandler(conn *websocket.Conn) {
 			handleRematchMessage(conn, msg)
 		default:
 			fmt.Println("Unknown message type:", msg.Type)
+			conn.Close()
+			return
 		}
 	}
 }

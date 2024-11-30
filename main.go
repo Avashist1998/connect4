@@ -29,6 +29,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/ws/live", handlers.LiveWebSocketHandler)
+	http.HandleFunc("/ws/lobby", handlers.LobbyWebSocketHandler)
 	log.Println("Starting server on %s", port)
 	log.Fatal(http.ListenAndServe(port, nil))
 }

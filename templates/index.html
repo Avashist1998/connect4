@@ -7,16 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/css/styles.css">
     <style>
-        #playWithComputer {
-            flex: 1;
-        }
-
         .difficulty-container {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin: 20px auto;
-        font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px auto;
+            font-family: Arial, sans-serif;
         }
 
         .difficulty-btn {
@@ -75,25 +71,28 @@
                 </div>
                 <div>
                     <label>Player Name</label>
-                    <input id="playerAName" type="text" value=""/>
+                    <input id="playerANameBot" type="text" value=""/>
                 </div>
                 <button onclick=handleCreateBotGame() >Submit</button>
             </div>
-
+            <div id="playWithRandom">
+                <h2>Play with Random</h2>
+                <div>
+                    <button onclick=handleRandomPlay()>Submit</button>
+                </div>
+            </div>
         </div>
+        <game-lobby id="lobby"></game-lobby>
     </div>
     <script type="text/javascript" src="/static/js/index.js"></script>
+    <script type="module" src="/static/js/components/gameLobby.js"></script>
     <script type="text/javascript">
 
-        var bot_level = "medium"
         const buttons = document.querySelectorAll(".difficulty-btn");
-        const selectedDifficulty = document.getElementById("selected-difficulty");
-
         buttons.forEach(button => {
         button.addEventListener("click", () => {
                 buttons.forEach(btn => btn.classList.remove("active"));
                 button.classList.add("active");
-                selectedDifficulty.textContent = `Selected: ${button.textContent}`;
             });
         });
     </script>
