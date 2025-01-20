@@ -1,4 +1,5 @@
-var currPlayer = document.getElementById("currPlayer").innerHTML;
+var currPlayer = document.getElementById("player1").innerHTML;
+var currSlot = document.getElementById("currSlot").innerHTML;
 
 const addColumnClickListeners = () => {
     const columns = document.querySelectorAll('.col');
@@ -6,19 +7,20 @@ const addColumnClickListeners = () => {
         col.addEventListener("click", () => {
             const col_number = Number(col.id.replace("col-", ""))
             currPlayer = document.getElementById("currPlayer").innerHTML; 
-            console.log(`Player: ${currPlayer} Column Clicked: ${col_number}`)
-            makeMove(currPlayer, col_number)
+            console.log(`Player: ${currPlayer}, Slot: ${currSlot} Column Clicked: ${col_number}`)
+            makeMove(currPlayer, currSlot, col_number)
         })
     })
 }
 
 
-const makeMove = async (player, move) => {
+const makeMove = async (player, slot, move) => {
     let res = await fetch(window.location.href, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             "Player": player,
+            "Slot": slot,
             "Move": Number(move),
         }),
     });
@@ -30,7 +32,8 @@ const makeMove = async (player, move) => {
 
     let data = await res.json();
     currPlayer = document.getElementById("currPlayer")
-    currPlayer.innerHTML = data.currPlayer
+    currSlot = data.currSlot;
+    // currPlayer.innerHTML = data.currPlayer
     const boardElement = document.getElementById('gameBoard');
     boardElement.updateGrid(data.board);
     if (data.message == "Game Over") {

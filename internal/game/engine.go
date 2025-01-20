@@ -47,6 +47,6 @@ func RunGame() {
 		}
 
 		// Switch to the next player
-		if positionName == "RED" {positionName = "YELLOW" } else { positionName = "RED" }
+		if positionName == "RED" { positionName = "YELLOW" } else { positionName = "RED" }
 	}
 }

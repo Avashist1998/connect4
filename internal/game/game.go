@@ -7,12 +7,12 @@ import (
 )
 
 type Game struct {
-	moveCount   int
-	Player1     string
-	Player2     string
-	winner      string
-	moves       []int
-	board       []int
+	moveCount int
+	Player1   string
+	Player2   string
+	winner    string
+	moves     []int
+	board     []int
 }
 
 func (game *Game) GetBoard() []int {
@@ -24,12 +24,12 @@ func (game *Game) GetBoard() []int {
 
 func NewGame(Player1 string, Player2 string) *Game {
 	return &Game{
-		Player1:     Player1,
-		Player2:     Player2,
-		moveCount:   0,
-		moves:       []int{},
-		board:       make([]int, 42),
-		winner:      "",
+		Player1:   Player1,
+		Player2:   Player2,
+		moveCount: 0,
+		moves:     []int{},
+		board:     make([]int, 42),
+		winner:    "",
 	}
 }
 
@@ -115,6 +115,18 @@ func IsGameOver(game *Game) bool {
 	return game.GetWinner() != ""
 }
 
+func (game *Game) updateGameWinner(index int) {
+	if !IsWinner(game, index) {
+		return
+	}
+
+	if game.GetCurrSlot() == "RED" {
+		game.winner = game.Player1
+		return
+	}
+	game.winner = game.Player2
+}
+
 func MakeMove(game *Game, slot string, move int) error {
 	if !game.isPlayerTurn(slot) {
 		return errors.New("not your turn")
@@ -144,9 +156,7 @@ func MakeMove(game *Game, slot string, move int) error {
 	}
 	game.moveCount += 1
 	game.moves = append(game.moves, move)
-	if IsWinner(game, index) {
-		game.winner = slot
-	}
+	game.updateGameWinner(index)
 	return nil
 }
 
@@ -161,6 +171,13 @@ func (game *Game) GetCurrPlayer() string {
 		return game.Player1
 	}
 	return game.Player2
+}
+
+func (game *Game) GetCurrSlot() string {
+	if game.moveCount%2 == 0 {
+		return "RED"
+	}
+	return "YELLOW"
 }
 
 func (game *Game) GetMoves() []int {

@@ -10,8 +10,9 @@
 <body>
     <div class="main">
         <h1>Connect 4 Match</h1>
-        <h2>{{ .Player1 }} vs {{ .Player2 }}</h2>
-        <h2 id="startPlayer">Turn: <span id="currPlayer">{{ .CurrPlayer }}</span></h2>
+        <h2><span id="player1">{{ .Player1 }}</span> RED vs <span id="player2">{{ .Player2 }}</span> YELLOW</h2> 
+        <span id="currPlayer">{{ .CurrPlayer }}</span>
+        <h2 id="currSlot">{{ .CurrSlot }}</h2>
         <game-board id="gameBoard"></game-board>
     </div>
     <div id="gameOverModal" style="display: none">

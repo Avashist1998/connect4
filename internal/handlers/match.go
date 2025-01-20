@@ -11,37 +11,38 @@ import (
 	"net/http"
 )
 
-func MatchHandler(w http.ResponseWriter, r *http.Request) {
+func HandleMakeMatch(w http.ResponseWriter, r *http.Request) {
+	/*
+		Handle the creation of a match in the system
+		input: request of MatchRequest
+		response: return the match id as response
 
-	switch r.Method {
-
-	case http.MethodPost:
-		var data models.MatchRequestData
-		bodyBytes, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		// Log the body as a string
-		log.Printf("Request Body: %s", string(bodyBytes))
-		err = json.Unmarshal(bodyBytes, &data)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		datastore := store.MatchManagerFactory()
-		var matchID string = datastore.CreateGame(data.Player1, data.Player2, data.Level, data.GameType)
-		response := map[string]interface{}{
-			"match_id": matchID,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+	*/
+	var data models.MatchRequestData
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+
+	// Log the body as a string
+	log.Printf("Request Body: %s", string(bodyBytes))
+	err = json.Unmarshal(bodyBytes, &data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	datastore := store.MatchManagerFactory()
+	var matchID string = datastore.CreateGame(data.Player1, data.Player2, data.Level, data.GameType)
+	response := map[string]interface{}{
+		"match_id": matchID,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
-func MatchPlayHandler(w http.ResponseWriter, r *http.Request, matchID string) {
+func HandleMatch(w http.ResponseWriter, r *http.Request, matchID string) {
 
 	datastore := store.MatchManagerFactory()
 	data, err := datastore.GetSessionData(matchID)
@@ -54,7 +55,7 @@ func MatchPlayHandler(w http.ResponseWriter, r *http.Request, matchID string) {
 	}
 
 	if data.GameType == "local" {
-		MatchLocalPlayHandler(w, r, matchID, data)
+		HandleLocalPlay(w, r, matchID, data)
 	} else if data.GameType == "live" {
 		var data = models.LivePageData{MatchID: matchID}
 		utils.RenderTemplate(w, "live.html", data)
@@ -130,13 +131,14 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 	}
 }
 
-func MatchLocalPlayHandler(w http.ResponseWriter, r *http.Request, matchID string, matchData *models.MatchSession) {
+func HandleLocalPlay(w http.ResponseWriter, r *http.Request, matchID string, matchData *models.MatchSession) {
 	match := matchData.Game
 	switch r.Method {
 	case http.MethodGet:
 		var data = models.MatchPageData{
 			Player1:    match.Player1,
 			Player2:    match.Player2,
+			CurrSlot:   match.GetCurrSlot(),
 			CurrPlayer: match.GetCurrPlayer(),
 		}
 		utils.RenderTemplate(w, "match.html", data)
@@ -162,7 +164,8 @@ func MatchLocalPlayHandler(w http.ResponseWriter, r *http.Request, matchID strin
 			utils.ReturnJson(w, response, http.StatusBadRequest)
 			return
 		}
-		err = game.MakeMove(match, data.Player, data.Move)
+
+		err = game.MakeMove(match, data.Slot, data.Move)
 		if err != nil {
 			response := map[string]interface{}{
 				"message": "invalid move or game over",
@@ -174,6 +177,7 @@ func MatchLocalPlayHandler(w http.ResponseWriter, r *http.Request, matchID strin
 			"message":    "Move successfully updated",
 			"board":      match.GetBoard(),
 			"currPlayer": match.GetCurrPlayer(),
+			"currSlot":   match.GetCurrSlot(),
 			"winner":     "",
 		}
 

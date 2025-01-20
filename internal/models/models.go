@@ -17,6 +17,7 @@ type MatchRequestData struct {
 
 type MoveData struct {
 	Player string
+	Slot string
 	Move   int
 }
 
@@ -24,6 +25,7 @@ type MatchPageData struct {
 	Player1     string
 	Player2     string
 	CurrPlayer  string
+	CurrSlot    string
 	BoardHTML   template.HTML
 	NewGameHTML template.HTML
 }
