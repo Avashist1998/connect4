@@ -1,9 +1,7 @@
 let socket = null
 
-const updatePlayerTurn = (currPlayer) => {
-    let playerName = document.getElementById("homePlayer").innerHTML
-    console.log(currPlayer, playerName)
-    if (currPlayer == playerName) {
+const updatePlayerTurn = (playerHeadingID) => {
+    if (playerHeadingID == "homePlayer") {
         document.getElementById("homePlayer").style.backgroundColor = "green"
         document.getElementById("awayPlayer").style.backgroundColor = "white"
     } else {
@@ -28,7 +26,9 @@ const joinUIUpdate = (messageData) => {
     document.querySelector(".main").classList = "main"
     const boardElement = document.getElementById('game-board');
     boardElement.updateGrid(messageData.board);
-    updatePlayerTurn(messageData.currPlayer);
+    // Move this to the backend
+    messageData.turn = messageData.currPlayer == document.getElementById("homePlayer").innerHTML
+    messageData.turn ? updatePlayerTurn("homePlayer") : updatePlayerTurn("awayPlayer");
 }
 
 
@@ -57,7 +57,7 @@ const gameOverUpdate = (messageData) => {
 
 // Initialize WebSocket connection and set up message handling
 const initializeSocket = () => {
-    socket = new WebSocket("wss://connect4.avashist.com/ws/live");
+    socket = new WebSocket(config.liveWSEndpoint);
 
     socket.onmessage = function (event) {
         let messageData = JSON.parse(event.data);
@@ -82,7 +82,7 @@ const initializeSocket = () => {
     
     socket.onclose = function () {
         console.log("WebSocket connection closed");
-        window.location.href = "https://connect4.avashist.com"
+        window.location.href = config.httpURL
     };
 };
 
@@ -123,7 +123,7 @@ const onClickJoin = () => {
 }
 
 const handleClickHome = () => {
-    window.location.href = "https://connect4.avashist.com"
+    window.location.href =  config.httpURL
 }
 
 
@@ -157,5 +157,5 @@ const rematchResponse = (res) => {
 
 document.getElementById("copyButton").addEventListener("click", () => {
     navigator.clipboard.writeText(window.location.href);
-    alert("URL adding to clipboard, Share with friends")
+    alert("URL adding to clipboard, Share with your friends")
 })

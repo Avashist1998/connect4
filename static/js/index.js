@@ -1,8 +1,7 @@
 let socket = null
-const BASE_URL = "https://connect4.avashist.com"
 
 const createGame = async (type, player1, player2, level = "") => {
-    let res = await fetch(BASE_URL, {
+    let res = await fetch(config.httpURL, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -68,7 +67,7 @@ const handleCreateBotGame = () => {
 
 // Initialize WebSocket connection and set up message handling
 const initializeSocket = (onOpenCallback) => {
-    socket = new WebSocket("wss://connect4.avashist.com/ws/lobby");
+    socket = new WebSocket(config.lobbyWSEndpoint);
 
     socket.onmessage = function (event) {
         let messageData = JSON.parse(event.data);

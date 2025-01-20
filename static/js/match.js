@@ -46,7 +46,7 @@ const makeMove = async (player, move) => {
 }
 
 const handleClickHome = () => {
-    window.location.href = "https://connect4.avashist.com"
+    window.location.href =  config.httpURL
 }
 
 const handleClickRematch = async () => {
