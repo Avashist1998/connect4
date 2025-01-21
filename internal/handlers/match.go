@@ -95,7 +95,7 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			utils.ReturnJson(w, response, http.StatusBadRequest)
 			return
 		}
-		err = game.MakeMove(match, data.Player, data.Move)
+		err = game.MakeMove(match, data.Slot, data.Move)
 		if err != nil {
 			response := map[string]interface{}{
 				"message": "invalid move or game over",
@@ -103,13 +103,15 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			utils.ReturnJson(w, response, http.StatusBadGateway)
 			return
 		}
-
-		move := game.GetBotMove(match, matchData.Level)
-		game.MakeMove(match, "bot", move)
+		if !game.IsGameOver(match) {
+			move := game.GetBotMove(match, matchData.Level)
+			game.MakeMove(match, "YELLOW", move)
+		}
 		response := map[string]interface{}{
 			"message":    "Move successfully updated",
 			"board":      match.GetBoard(),
 			"currPlayer": match.GetCurrPlayer(),
+			"currSlot":   match.GetCurrSlot(),
 			"winner":     "",
 		}
 
@@ -122,6 +124,7 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			}
 		}
 		utils.ReturnJson(w, response, http.StatusOK)
+
 	case http.MethodDelete:
 		matchData.Game = game.NewGame(match.Player1, match.Player2)
 		response := map[string]interface{}{

@@ -121,10 +121,10 @@ func (game *Game) updateGameWinner(index int) {
 	}
 
 	if game.GetCurrSlot() == "RED" {
-		game.winner = game.Player1
+		game.winner = game.Player2
 		return
 	}
-	game.winner = game.Player2
+	game.winner = game.Player1
 }
 
 func MakeMove(game *Game, slot string, move int) error {

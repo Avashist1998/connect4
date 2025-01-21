@@ -15,7 +15,6 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	path := strings.Trim(r.URL.Path, "/")
 	if path == "" {
@@ -23,5 +22,4 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		HandleMatch(w, r, path)
 	}
-	return
 }

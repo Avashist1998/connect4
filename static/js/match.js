@@ -1,6 +1,36 @@
 var currSlot = "RED";
 var currPlayer = document.getElementById("player1").innerHTML;
 
+const makeMoveRequest = async (player, slot, move) => {
+    let res = await fetch(window.location.href, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            "Player": player,
+            "Slot": slot,
+            "Move": Number(move),
+        }),
+    });
+
+    if (res.status != 200) {
+        console.log("Some error occurred with the call");
+        throw new Error("Failed to create the game");  
+    }
+    let data = await res.json();
+    return data
+}
+
+const makeRematchRequest = async () => {
+    let res = await fetch(window.location.href, {
+        method: "DELETE",
+    });
+    if (res.status != 200) {
+        console.log("Some error occurred with the call");
+        throw new Error("Failed to reset the game");
+    }
+    return
+}
+
 const addColumnClickListeners = () => {
     const columns = document.querySelectorAll('.col');
     columns.forEach(col => {
@@ -20,39 +50,26 @@ const updateTurnUI = (currPlayer, currSlot) => {
     currSlotElement.classList = currSlot == "RED" ? "color-indicator red-circle" : "color-indicator yellow-circle" 
 }
 
+const showGameOverModal = (winner) => {
+    document.querySelector(".main").classList += " disabled"
+    document.getElementById("gameOverModal").style.display = "block"
+    if (winner === "") {
+        document.getElementById("gameOverHeading").innerHTML = "Draw"
+    } else {
+        document.getElementById("gameOverHeading").innerHTML = `Winner: ${winner}`
+    }
+}
 
 const makeMove = async (player, slot, move) => {
-    let res = await fetch(window.location.href, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            "Player": player,
-            "Slot": slot,
-            "Move": Number(move),
-        }),
-    });
-
-    if (res.status != 200) {
-        console.log("Some error occurred with the call");
-        throw new Error("Failed to create the game");  
-    }
-
-    let data = await res.json();
+    data = await makeMoveRequest(player, slot, move)
     currSlot = data.currSlot;
     currPlayer = data.currPlayer;
     updateTurnUI(currPlayer, currSlot)
     const boardElement = document.getElementById('gameBoard');
     boardElement.updateGrid(data.board);
     if (data.message == "Game Over") {
-        document.querySelector(".main").classList += " disabled"
-        document.getElementById("gameOverModal").style.display = "block"
-        if (data.winner === "") {
-            document.getElementById("gameOverHeading").innerHTML = "Draw"
-        } else {
-            document.getElementById("gameOverHeading").innerHTML = `Winner: ${data.winner}`
-        }
+        showGameOverModal(data.winner)
     }
-
 }
 
 const handleClickHome = () => {
@@ -60,13 +77,7 @@ const handleClickHome = () => {
 }
 
 const handleClickRematch = async () => {
-    let res = await fetch(window.location.href, {
-        method: "DELETE",
-    });
-    if (res.status != 200) {
-        console.log("Some error occurred with the call");
-        throw new Error("Failed to reset the game");
-    }
+    await makeRematchRequest();
     window.location.reload();
 } 
 
