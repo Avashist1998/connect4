@@ -29,16 +29,19 @@ func handleJoinMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 	conns, ok := connectionLookup[msg.MatchID]
 
 	if !ok {
-		connectionLookup[msg.MatchID] = []models.PlayerConnection{{Player: msg.Player, Conn: conn, Time: time.Now().UnixMilli()}}
+		connectionLookup[msg.MatchID] = []models.PlayerConnection{{Player: msg.Player, Conn: conn, Time: time.Now().UnixMilli(), Slot: "RED"}}
 		return
 	}
 
 	if len(conns) == 1 {
-		fmt.Printf("we have the second player signup")
+		fmt.Printf("we have the second player sign up\n")
+
 		conns = append(conns, models.PlayerConnection{
 			Player: msg.Player,
 			Conn:   conn,
-			Time:   time.Now().UnixMilli()})
+			Time:   time.Now().UnixMilli(),
+			Slot:   "YELLOW",
+		})
 		connectionLookup[msg.MatchID] = conns
 		game.UpdateNames(match, conns[0].Player, conns[1].Player)
 
@@ -46,9 +49,11 @@ func handleJoinMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 			startMessage := map[string]interface{}{
 				"message":    "Game Started",
 				"board":      match.GetBoard(),
+				"currSlot":   match.GetCurrSlot(),
 				"currPlayer": match.GetCurrPlayer(),
 				"player1":    match.Player1,
 				"player2":    match.Player2,
+				"slot":       c.Slot,
 			}
 			c.Conn.WriteJSON(startMessage)
 		}
@@ -69,6 +74,7 @@ func handleJoinMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 	startMessage := map[string]interface{}{
 		"message":    "Game Started",
 		"board":      match.GetBoard(),
+		"currSlot":   match.GetCurrSlot(),
 		"currPlayer": match.GetCurrPlayer(),
 		"player1":    match.Player1,
 		"player2":    match.Player2,
@@ -118,13 +124,14 @@ func handleMoveMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 		conn.Close()
 	}
 
-	err := game.MakeMove(match, msg.Player, msg.Move)
+	err := game.MakeMove(match, msg.Slot, msg.Move)
 
 	if err != nil {
 		failedMove := map[string]interface{}{
 			"message":    err.Error(),
 			"board":      match.GetBoard(),
 			"currPlayer": match.GetCurrPlayer(),
+			"currSlot":   match.GetCurrSlot(),
 		}
 		conn.WriteJSON(failedMove)
 	}
@@ -133,6 +140,7 @@ func handleMoveMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 		"message":    "Update Game",
 		"board":      match.GetBoard(),
 		"currPlayer": match.GetCurrPlayer(),
+		"currSlot":   match.GetCurrSlot(),
 	}
 	for _, c := range data {
 		c.Conn.WriteJSON(updateMessage)

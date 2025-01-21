@@ -1,5 +1,5 @@
+var currSlot = "RED";
 var currPlayer = document.getElementById("player1").innerHTML;
-var currSlot = document.getElementById("currSlot").innerHTML;
 
 const addColumnClickListeners = () => {
     const columns = document.querySelectorAll('.col');
@@ -11,6 +11,13 @@ const addColumnClickListeners = () => {
             makeMove(currPlayer, currSlot, col_number)
         })
     })
+}
+
+const updateTurnUI = (currPlayer, currSlot) => {
+    currSlotElement = document.getElementById("currSlot")
+    currPlayerElement = document.getElementById("currPlayer")
+    currPlayerElement.innerHTML = currPlayer
+    currSlotElement.classList = currSlot == "RED" ? "color-indicator red-circle" : "color-indicator yellow-circle" 
 }
 
 
@@ -31,9 +38,9 @@ const makeMove = async (player, slot, move) => {
     }
 
     let data = await res.json();
-    currPlayer = document.getElementById("currPlayer")
     currSlot = data.currSlot;
-    // currPlayer.innerHTML = data.currPlayer
+    currPlayer = data.currPlayer;
+    updateTurnUI(currPlayer, currSlot)
     const boardElement = document.getElementById('gameBoard');
     boardElement.updateGrid(data.board);
     if (data.message == "Game Over") {

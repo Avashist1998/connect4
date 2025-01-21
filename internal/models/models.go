@@ -17,7 +17,7 @@ type MatchRequestData struct {
 
 type MoveData struct {
 	Player string
-	Slot string
+	Slot   string
 	Move   int
 }
 
@@ -34,6 +34,7 @@ type PlayerConnection struct {
 	Player string
 	Conn   *websocket.Conn
 	Time   int64
+	Slot   string
 }
 
 const (
@@ -51,6 +52,7 @@ type Message struct {
 	MatchID string
 	Type    string `json:"type"`    // Type of message (join, move, ping)
 	Player  string `json:"player"`  // Player's name
+	Slot    string `json:"slot"`    // Slot associated with player
 	Move    int    `json:"move"`    // Move (for MoveMessage)
 	Message string `json:"message"` // Message content (optional)
 }

@@ -5,90 +5,101 @@
     <title>Connect 4</title>
     <link rel="icon" type="image/x-icon" href="https://static.thenounproject.com/png/1579985-200.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
     <style>
-        .difficulty-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px auto;
-            font-family: Arial, sans-serif;
+        .card-title {
+            color: #7C444F; /* Darkest color for titles */
+        }
+
+        .card-body {
+            padding: 15px; /* Add padding for elements inside the card body */
+        }
+
+        .form-group { /* Add spacing between inputs using margin */
+            margin-bottom: 10px;
         }
 
         .difficulty-btn {
-        padding: 10px 20px;
-        font-size: 16px;
-        border: 2px solid #000;
-        border-radius: 5px;
-        background-color: #f0f0f0;
-        cursor: pointer;
-        transition: background-color 0.3s, transform 0.2s;
+            background-color: #9F5255; /* Middle color for buttons */
+            color: #F39E60; /* Lightest color for button text */
+            padding: 10px 15px; /* Set padding for buttons */
+            margin-bottom: 10px;
         }
-
-        .difficulty-btn:hover {
-        background-color: #e0e0e0;
+        .difficulty-container {
+            padding-bottom: 10px;
         }
-
         .difficulty-btn.active {
-        background-color: #4caf50;
-        color: #fff;
-        border-color: #4caf50;
-        transform: scale(1.1);
-        }
-
-        #selected-difficulty {
-        text-align: center;
-        font-weight: bold;
+            background-color: #7C444F; /* Darkest color for active button */
         }
     </style>
 </head>
 <body>
     <div class="main">
-        <h1>Connect 4</h1>
-        <div id="gameSelection">
-            <div id="playLocal">
-                <h2>Play Local</h2>
-                <div>
-                    <label>Player A Name </label>
-                    <input id="playerAName" type="text" value=""/>
+        <div class="title">
+            <h1>Connect 4</h1>
+        </div>
+        <div class="game-cards container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card game-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Play Local</h5>
+                            <div class="form-group">
+                                <label>Player A Name</label>
+                                <input id="playerAName" type="text" value=""/>
+                            </div>
+                            <div class="form-group">
+                                <label>Player B Name</label>
+                                <input id="playerBName" type="text" value=""/>
+                            </div>
+                            <button onclick=handleCreateLocalGame()>Submit</button>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label>Player B Name </label>
-                    <input id="playerBName" type="text" value=""/>
+                <div class="col-md-6">
+                    <div class="card game-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Play with a Friend</h5>
+                            <button onclick=handleCreateLiveGame()>Create A Game</button>
+                        </div>
+                    </div>
                 </div>
-                <button onclick=handleCreateLocalGame()>Submit</button>
             </div>
-            <div id="playWithFriend">
-                <h2>Play with a Friend</h2>
-                <button onclick=handleCreateLiveGame()>Create A Game</button>
-            </div>
-            <div id="playWithComputer">
-                <h2>Play with Computer</h2>
-                <div class="difficulty-container">
-                    <button id="easy-btn" class="difficulty-btn">Easy</button>
-                    <button id="medium-btn" class="difficulty-btn active">Medium</button>
-                    <button id="hard-btn" class="difficulty-btn">Hard</button>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card game-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Play with Computer</h5>
+                            <div class="difficulty-container">
+                                <button id="easy-btn" class="difficulty-btn">Easy</button>
+                                <button id="medium-btn" class="difficulty-btn active">Medium</button>
+                                <button id="hard-btn" class="difficulty-btn">Hard</button>
+                            </div>
+                            <div class="form-group">
+                                <label>Player Name</label>
+                                <input id="playerANameBot" type="text" value=""/>
+                            </div>
+                            <button onclick=handleCreateBotGame() >Submit</button>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label>Player Name</label>
-                    <input id="playerANameBot" type="text" value=""/>
-                </div>
-                <button onclick=handleCreateBotGame() >Submit</button>
-            </div>
-            <div id="playWithRandom">
-                <h2>Play with Random</h2>
-                <div>
-                    <button onclick=handleRandomPlay()>Submit</button>
+                <div class="col-md-6">
+                    <div class="card game-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Play with Random</h5>
+                            <button onclick=handleRandomPlay()>Submit</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <game-lobby id="lobby"></game-lobby>
-    </div>
     <script type="text/javascript" src="/static/js/config.js"></script>
     <script type="text/javascript" src="/static/js/index.js"></script>
     <script type="module" src="/static/js/components/gameLobby.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript">
-
         const buttons = document.querySelectorAll(".difficulty-btn");
         buttons.forEach(button => {
         button.addEventListener("click", () => {

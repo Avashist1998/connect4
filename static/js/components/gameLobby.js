@@ -4,10 +4,9 @@ class GameLobby extends HTMLElement {
         this.attachShadow({mode: "open"})
         this._waitingQueue = [];
     }
-
     set waitingQueue(queue) {
         this._waitingQueue = queue
-        this.render();
+        this.render();   
     }
 
     get waitingQueue() {
@@ -26,20 +25,27 @@ class GameLobby extends HTMLElement {
         const tableRows = this._waitingQueue
             .map(
                 (player) => `
-                <tr>
+                <tr scope="row">
                     <td>${player.id}</td>
                     <td>${player.time}</td>
                 </tr>` 
             ).join("");
 
         this.shadowRoot.innerHTML =`
-            <div id="lobby">
-                <h2>Lobby<h2>
-                <table>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+            <style>
+                .title {
+                    padding-top: 20px;
+                    color: #7C444F;
+                }
+            </style>
+            <div class="container" id="lobby">
+                <h2 class="title">Lobby<h2>
+                <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th>Player Name</th>
-                        <th>Joined Time</th>
+                        <th scope="col">Player ID</th>
+                        <th scope="col">Joined Time</th>
                     </tr>
                     </thead>
                     <tbody>

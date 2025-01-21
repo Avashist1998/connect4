@@ -1,19 +1,3 @@
-.main {
-    justify-content: center;
-    text-align: center;
-    display: flex;
-    flex-direction: column; 
-    align-items: center;    
-    justify-content: center;
-    text-align: center;
-    min-height: 100vh;
-    gap: 30px;
-}
-.main.disabled {
-    pointer-events: none;
-    opacity: 0.5;
-}
-
 #game {
     display: none;
 }
@@ -121,4 +105,44 @@
     .difficulty-container {
         justify-content: space-around;
     }
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #F39E60; /* Lightest color for background */
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.main.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.title {
+    padding-top: 20px;
+    color: #7C444F;
+}
+
+
+.game-cards {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.game-card {
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: #E16A54; /* Medium color for card background */
 }
