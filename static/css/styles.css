@@ -2,41 +2,6 @@
     display: none;
 }
 
-#joinModal {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-}
-
-#qrcode {
-    margin-top: 10px;
-    width: 150px;
-    height: 150px;
-    display: block;
-}
-
-#joinForm, #inviteModal {
-    display: inline-block;
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
-    border: 1px solid #ccc;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
-    border-radius: 15px;
-    min-height: 300px;
-    width: 150px;
-}
-
-#joinForm input[type="text"] {
-    width: 80%;
-}
-
-#joinForm button, #inviteModal button {
-    margin-top: 10px;
-}
-
 #gameOverModal {
     background-color: antiquewhite;
     z-index: 10;
@@ -134,6 +99,24 @@ body {
 }
 
 
+.color-indicator {
+    display: inline-block; /* Keep it in line with the text */
+    width: 20px; /* Adjust size as needed */
+    height: 20px;
+    border-radius: 50%; /* Make it a circle */
+    margin: 0 5px; /* Add some spacing */
+    vertical-align: middle; /* Align vertically with text */
+}
+
+.red-circle {
+    background-color: red;
+}
+
+.yellow-circle {
+    background-color: yellow;
+    border: 1px solid black; /* Add a border for better visibility on light backgrounds */
+}
+
 .game-cards {
     flex: 1;
     overflow-y: auto;
@@ -145,4 +128,12 @@ body {
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     background-color: #E16A54; /* Medium color for card background */
+}
+
+.card-body {
+    padding: 15px; /* Add padding for elements inside the card body */
+}
+
+.form-group { /* Add spacing between inputs using margin */
+    margin-bottom: 10px;
 }
