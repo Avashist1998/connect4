@@ -29,7 +29,10 @@ func handleJoinMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 	conns, ok := connectionLookup[msg.MatchID]
 
 	if !ok {
-		connectionLookup[msg.MatchID] = []models.PlayerConnection{{Player: msg.Player, Conn: conn, Time: time.Now().UnixMilli(), Slot: "RED"}}
+		connectionLookup[msg.MatchID] = []models.PlayerConnection{{Player: msg.Player,
+			Conn: conn,
+			Time: time.Now().UnixMilli(),
+			Slot: "RED"}}
 		return
 	}
 
