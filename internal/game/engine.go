@@ -9,11 +9,12 @@ import (
 )
 
 func RunGame() {
-	newGame := NewGame("Player1", "Player2")
-	player := newGame.GetCurrPlayer()
+	positionName := "RED"
+	newGame := NewGame("Player1", "Player1")
 	reader := bufio.NewReader(os.Stdin)
-
+	player := "";
 	for {
+		player = newGame.GetCurrPlayer()
 		fmt.Printf("%s move? : ", player)
 
 		// Read and trim user input
@@ -28,7 +29,7 @@ func RunGame() {
 		}
 
 		// Attempt to make the move
-		err = MakeMove(newGame, player, move)
+		err = MakeMove(newGame, positionName, move)
 		if err != nil {
 			println(err.Error())
 			continue // Prompt the user again
@@ -46,6 +47,6 @@ func RunGame() {
 		}
 
 		// Switch to the next player
-		player = newGame.GetCurrPlayer()
+		if positionName == "RED" { positionName = "YELLOW" } else { positionName = "RED" }
 	}
 }

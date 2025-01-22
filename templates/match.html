@@ -5,14 +5,28 @@
     <link rel="icon" type="image/x-icon" href="https://static.thenounproject.com/png/1579985-200.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect 4 Game</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <div class="main">
-        <h1>Connect 4 Match</h1>
-        <h2>{{ .Player1 }} vs {{ .Player2 }}</h2>
-        <h2 id="startPlayer">Turn: <span id="currPlayer">{{ .CurrPlayer }}</span></h2>
-        <game-board id="gameBoard"></game-board>
+        <h1 class="title">Connect 4 Match</h1>
+        <h2>
+            <span class="title" id="player1">{{ .Player1 }}</span>
+            <span class="color-indicator red-circle"></span>
+            vs
+            <span class="title" id="player2">{{ .Player2 }}</span>
+            <span class="color-indicator yellow-circle"></span>
+        </h2>
+        <h2>
+            <span id="currPlayer">{{ .CurrPlayer }}</span>
+            <span id="currSlot" class="color-indicator red-circle"></span>
+        </h2>
+        <div class="card game-card">
+            <div class="card-body">
+                <game-board id="gameBoard"></game-board>
+            </div>
+        </div>
     </div>
     <div id="gameOverModal" style="display: none">
         <h2 id="gameOverHeading"></h2>

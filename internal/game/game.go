@@ -7,13 +7,12 @@ import (
 )
 
 type Game struct {
-	moveCount   int
-	Player1     string
-	Player2     string
-	startPlayer string
-	winner      string
-	moves       []int
-	board       []int
+	moveCount int
+	Player1   string
+	Player2   string
+	winner    string
+	moves     []int
+	board     []int
 }
 
 func (game *Game) GetBoard() []int {
@@ -25,28 +24,32 @@ func (game *Game) GetBoard() []int {
 
 func NewGame(Player1 string, Player2 string) *Game {
 	return &Game{
-		Player1:     Player1,
-		Player2:     Player2,
-		startPlayer: Player1,
-		moveCount:   0,
-		moves:       []int{},
-		board:       make([]int, 42),
-		winner:      "",
+		Player1:   Player1,
+		Player2:   Player2,
+		moveCount: 0,
+		moves:     []int{},
+		board:     make([]int, 42),
+		winner:    "",
 	}
 }
 
-func IsPlayerTurn(game *Game, player string) bool {
-	if game.moveCount%2 == 0 && player == game.startPlayer {
-		return true
+func (game *Game) isPlayerTurn(slot string) bool {
+	if game.moveCount%2 == 0 {
+		return slot == "RED"
 	}
-
-	if game.moveCount%2 == 1 && player != game.startPlayer {
-		return true
-	}
-	return false
+	return slot == "YELLOW"
 }
 
 func IsMoveValid(game *Game, move int) bool {
+
+	if move < 0 {
+		return false
+	}
+
+	if move > 6 {
+		return false
+	}
+
 	for i := 0; i < 6; i++ {
 		if game.board[i*7+move] == 0 {
 			return true
@@ -112,8 +115,20 @@ func IsGameOver(game *Game) bool {
 	return game.GetWinner() != ""
 }
 
-func MakeMove(game *Game, player string, move int) error {
-	if !IsPlayerTurn(game, player) {
+func (game *Game) updateGameWinner(index int) {
+	if !IsWinner(game, index) {
+		return
+	}
+
+	if game.GetCurrSlot() == "RED" {
+		game.winner = game.Player2
+		return
+	}
+	game.winner = game.Player1
+}
+
+func MakeMove(game *Game, slot string, move int) error {
+	if !game.isPlayerTurn(slot) {
 		return errors.New("not your turn")
 	}
 
@@ -141,9 +156,7 @@ func MakeMove(game *Game, player string, move int) error {
 	}
 	game.moveCount += 1
 	game.moves = append(game.moves, move)
-	if IsWinner(game, index) {
-		game.winner = player
-	}
+	game.updateGameWinner(index)
 	return nil
 }
 
@@ -154,10 +167,17 @@ func ShowGame(game *Game) {
 }
 
 func (game *Game) GetCurrPlayer() string {
-	if IsPlayerTurn(game, game.Player1) {
+	if game.isPlayerTurn("RED") {
 		return game.Player1
 	}
 	return game.Player2
+}
+
+func (game *Game) GetCurrSlot() string {
+	if game.moveCount%2 == 0 {
+		return "RED"
+	}
+	return "YELLOW"
 }
 
 func (game *Game) GetMoves() []int {
@@ -165,12 +185,6 @@ func (game *Game) GetMoves() []int {
 }
 
 func UpdateNames(game *Game, player1 string, player2 string) {
-
-	if game.Player1 == game.startPlayer {
-		game.startPlayer = player1
-	} else {
-		game.startPlayer = player2
-	}
 	game.Player1 = player1
 	game.Player2 = player2
 }
