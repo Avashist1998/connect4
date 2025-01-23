@@ -104,7 +104,8 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			return
 		}
 		if !game.IsGameOver(match) {
-			move := game.GetBotMove(match, matchData.Level)
+			// TODO: We need to update the yellow so that bot can be any slot
+			move := match.GetBotMove(matchData.Level, "YELLOW")
 			game.MakeMove(match, "YELLOW", move)
 		}
 		response := map[string]interface{}{

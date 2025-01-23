@@ -40,7 +40,7 @@ func (game *Game) isPlayerTurn(slot string) bool {
 	return slot == "YELLOW"
 }
 
-func IsMoveValid(game *Game, move int) bool {
+func (game *Game) isMoveValid(move int) bool {
 
 	if move < 0 {
 		return false
@@ -58,7 +58,7 @@ func IsMoveValid(game *Game, move int) bool {
 	return false
 }
 
-func GetAxisCount(game *Game, index int, shift int) int {
+func (game *Game) getAxisCount(index int, shift int) int {
 	i := index
 	col := index % 7
 	count := 0
@@ -82,25 +82,25 @@ func GetAxisCount(game *Game, index int, shift int) int {
 	return count - 1
 }
 
-func IsWinner(game *Game, index int) bool {
+func (game *Game) isWinner(index int) bool {
 	// vertical
 	count := 0
-	count = GetAxisCount(game, index, 7)
+	count = game.getAxisCount(index, 7)
 	if count >= 4 {
 		return true
 	}
 	// horizontal
-	count = GetAxisCount(game, index, 1)
+	count = game.getAxisCount(index, 1)
 	if count >= 4 {
 		return true
 	}
 	// positive diagonal
-	count = GetAxisCount(game, index, 6)
+	count = game.getAxisCount(index, 6)
 	if count >= 4 {
 		return true
 	}
 	// negative diagonal
-	count = GetAxisCount(game, index, 8)
+	count = game.getAxisCount(index, 8)
 	return count >= 4
 }
 
@@ -116,7 +116,7 @@ func IsGameOver(game *Game) bool {
 }
 
 func (game *Game) updateGameWinner(index int) {
-	if !IsWinner(game, index) {
+	if !game.isWinner(index) {
 		return
 	}
 
@@ -127,21 +127,9 @@ func (game *Game) updateGameWinner(index int) {
 	game.winner = game.Player1
 }
 
-func MakeMove(game *Game, slot string, move int) error {
-	if !game.isPlayerTurn(slot) {
-		return errors.New("not your turn")
-	}
-
-	if !IsMoveValid(game, move) {
-		return errors.New("cannot make this move")
-	}
-
-	if len(game.moves) == 42 || game.winner != "" {
-		return errors.New("game is over")
-	}
-
+func (game *Game) makeMove(move int, slot string) int {
 	val := 0
-	if game.moveCount%2 == 0 {
+	if slot == "RED" {
 		val = 1
 	} else {
 		val = -1
@@ -154,6 +142,39 @@ func MakeMove(game *Game, slot string, move int) error {
 			break
 		}
 	}
+	return index
+}
+
+func (game *Game) resetIndex(index int) {
+	game.board[index] = 0
+}
+
+func (game *Game) getConnectionCount(index int) int {
+	count := 0
+	// vertical
+	count += game.getAxisCount(index, 7)
+	// horizontal
+	count += game.getAxisCount(index, 1)
+	// positive diagonal
+	count += game.getAxisCount(index, 6)
+	// negative diagonal
+	count += game.getAxisCount(index, 8)
+	return count
+}
+
+func MakeMove(game *Game, slot string, move int) error {
+	if !game.isPlayerTurn(slot) {
+		return errors.New("not your turn")
+	}
+
+	if !game.isMoveValid(move) {
+		return errors.New("cannot make this move")
+	}
+
+	if len(game.moves) == 42 || game.winner != "" {
+		return errors.New("game is over")
+	}
+	index := game.makeMove(move, slot)
 	game.moveCount += 1
 	game.moves = append(game.moves, move)
 	game.updateGameWinner(index)
@@ -189,10 +210,102 @@ func UpdateNames(game *Game, player1 string, player2 string) {
 	game.Player2 = player2
 }
 
-func GetBotMove(game *Game, level string) int {
-	randomIndex := int(rand.Float32() * 6)
-	for !IsMoveValid(game, randomIndex) {
-		randomIndex = int(rand.Float32() * 6)
+func (game *Game) getValidMoves() []int {
+	var moves = []int{}
+
+	for i := 0; i < 7; i++ {
+		if game.isMoveValid(i) {
+			moves = append(moves, i)
+		}
 	}
-	return randomIndex
+	return moves
+}
+
+func (game *Game) getRandomMove() int {
+	moves := game.getValidMoves()
+	return int(rand.Float32() * float32(len(moves)))
+}
+
+func (game *Game) simulateWinnerMove(move int, slot string) (bool, error) {
+
+	if !game.isMoveValid(move) {
+		return false, errors.New("invalid move")
+	}
+
+	index := game.makeMove(move, slot)
+	res := game.isWinner(index)
+	game.resetIndex(index)
+	return res, nil
+}
+
+func (game *Game) getMoveScore(move int, slot string) (int, error) {
+	opp := "YELLOW"
+	if slot == "YELLOW" {
+		opp = "RED"
+	}
+	if !game.isMoveValid(move) {
+		return -100, errors.New("invalid move")
+	}
+	score := 0
+	index := game.makeMove(move, slot)
+	score += game.getConnectionCount(index)
+	game.resetIndex(index)
+
+	index = game.makeMove(move, opp)
+	score += game.getConnectionCount(index)
+	game.resetIndex(index)
+
+	return score, nil
+}
+
+func (game *Game) getSmartMove(slot string) int {
+
+	moves := game.getValidMoves()
+	for _, move := range moves {
+		res, err := game.simulateWinnerMove(move, slot)
+		if err == nil && res {
+			return move
+		}
+	}
+
+	oppSlot := ""
+	if slot == "RED" {
+		oppSlot = "YELLOW"
+	} else {
+		oppSlot = "RED"
+	}
+
+	for _, move := range moves {
+		res, err := game.simulateWinnerMove(move, oppSlot)
+		if err == nil && res {
+			return move
+		}
+	}
+
+	bestMove := moves[0]
+	bestScore := -4
+	for _, move := range moves {
+		score, err := game.getMoveScore(move, slot)
+		if err == nil {
+			if score > bestScore {
+				bestMove = move
+				bestScore = score
+			}
+		}
+	}
+	return bestMove
+}
+
+func (game *Game) GetBotMove(level string, slot string) int {
+	if level == "easy" {
+		return game.getRandomMove()
+	} else if level == "mid" {
+		if rand.Float32() > 0.7 {
+			return game.getSmartMove(slot)
+		}
+		return game.getRandomMove()
+	} else if level == "hard" {
+		return game.getSmartMove(slot)
+	}
+	return game.getRandomMove()
 }
