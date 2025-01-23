@@ -50,12 +50,12 @@ const handleCreateLiveGame = () => {
 
 const handleCreateBotGame = () => {
     let player1 = document.getElementById("playerANameBot").value;
-    let level = "medium"
     const buttons = document.querySelectorAll(".difficulty-btn");
     const activeButton = Array.from(buttons).find(btn => btn.classList.contains("active"));
     if (activeButton) {
-        level = activeButton.textContent.trim();
+        level = activeButton.textContent.trim().toLowerCase();
     }
+    console.log(level)
     createGame("bot", player1, "bot", level).then((matchID) => {
         console.log(`the match ID is ${matchID}`);
         window.location.href +=  `${matchID}`; 
