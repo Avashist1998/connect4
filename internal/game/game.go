@@ -297,7 +297,6 @@ func (game *Game) getSmartMove(slot string) int {
 }
 
 func (game *Game) GetBotMove(level string, slot string) int {
-	log.Printf("level: %s, slot: %s", level, slot)
 	if level == "easy" {
 		return game.getRandomMove()
 	} else if level == "mid" {
