@@ -58,7 +58,7 @@ Join a global pool of players
 Automatically matched with an available opponent
 
 Project Structure
-Copy.
+```
 ├── go.mod               # Go module dependencies
 ├── main.go              # Application entry point
 ├── internal/
@@ -72,7 +72,7 @@ Copy.
 │   ├── css/             # Stylesheets
 │   └── js/              # JavaScript files
 └── templates/           # HTML templates
-
+```
 Configuration
 Configuration can be adjusted in config.js and environment variables.
 Development
