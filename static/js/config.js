@@ -1,7 +1,7 @@
 const config = {
 
-    SSL : false,
-    BASE_URL : "0.0.0.0:9080",
+    SSL : true,
+    BASE_URL : "connect4.avashist.com",
 
     // Computed URLs
     get httpURL() {

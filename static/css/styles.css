@@ -1,3 +1,10 @@
+:root {
+    --primary-color: #7C444F;
+    --primary-color-light: #9F5255;
+    --secondary-color: #E16A54;
+    --secondary-color-light: #F39E60;
+}
+
 #game {
     display: none;
 }
