@@ -64,7 +64,10 @@ type LobbyMessage struct {
 }
 
 type MatchSession struct {
-	Game     *game.Game
-	Level    string
-	GameType string
+	Game          *game.Game
+	Level         string
+	GameType      string
+	State         string
+	Player1Status bool
+	Player2Status bool
 }

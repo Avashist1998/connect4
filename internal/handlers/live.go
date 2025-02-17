@@ -149,7 +149,7 @@ func handleMoveMessage(conn *websocket.Conn, msg models.Message, match *game.Gam
 		c.Conn.WriteJSON(updateMessage)
 	}
 
-	if game.IsGameOver(match) {
+	if match.IsGameOver() {
 		gameOverMessage := map[string]interface{}{
 			"message": "Game Over",
 			"winner":  match.GetWinner(),
@@ -193,11 +193,13 @@ func handleRematchMessage(conn *websocket.Conn, msg models.Message) {
 		}
 		for _, c := range data {
 			startMessage := map[string]interface{}{
+				"slot":       c.Slot,
 				"message":    "Game Started",
 				"board":      gameState.Board,
+				"currSlot":   gameState.CurrSlot,
 				"currPlayer": gameState.CurrPlayer,
-				"player1":    gameState.PlayerAName,
-				"player2":    gameState.PlayerBName,
+				"player2":    gameState.Player1,
+				"player1":    gameState.Player2,
 			}
 			c.Conn.WriteJSON(startMessage)
 		}

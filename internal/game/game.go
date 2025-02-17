@@ -108,7 +108,7 @@ func (game *Game) GetWinner() string {
 	return game.winner
 }
 
-func IsGameOver(game *Game) bool {
+func (game *Game) IsGameOver() bool {
 	if len(game.moves) == 42 {
 		return true
 	}

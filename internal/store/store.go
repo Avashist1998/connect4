@@ -6,6 +6,7 @@ import (
 
 var gameLobby *services.Lobby
 var matchManager *services.MatchManager
+var liveManager *services.LiveSessionManager
 
 func MatchManagerFactory() *services.MatchManager {
 	if matchManager == nil {
@@ -19,4 +20,12 @@ func LobbyFactory() *services.Lobby {
 		gameLobby = services.MakeLobby()
 	}
 	return gameLobby
+}
+
+func MakeLiveSessionManger() *services.LiveSessionManager {
+	if liveManager == nil {
+		liveManager = services.MakeLiveSessionManager()
+	}
+	return liveManager
+
 }

@@ -1,11 +1,11 @@
 let socket = null
+var playerId = ""
 var playerName = ""
 var playerSlot = ""
-var currPlayer = ""
-var currSlot = "RED"
 
-const updatePlayerTurn = (playerHeadingID) => {
-    if (playerHeadingID == "RED") {
+const updatePlayerTurn = (currPlayerId) => {
+    console.log(currPlayerId, playerId, currPlayerId===playerId)
+    if (currPlayerId === playerId) {
         document.getElementById("homePlayer").style.backgroundColor = "green"
         document.getElementById("awayPlayer").style.backgroundColor = "white"
     } else {
@@ -17,21 +17,24 @@ const updatePlayerTurn = (playerHeadingID) => {
 
 const joinUIUpdate = (messageData) => {
 
-    document.getElementById("homePlayer").innerHTML = messageData["player1"];
-    document.getElementById("awayPlayer").innerHTML = messageData["player2"];
+    if (messageData["player1"] == playerName) {
+        document.getElementById("homePlayer").innerHTML = messageData["player1"];
+        document.getElementById("awayPlayer").innerHTML = messageData["player2"];
+    } else {
+        document.getElementById("homePlayer").innerHTML = messageData["player2"];
+        document.getElementById("awayPlayer").innerHTML = messageData["player1"];
+    }
 
     document.getElementById("waitingScreen").hide();
     document.getElementById("game").style.display = 'block';
     document.getElementById("rematchModal").style.display = "none"
     document.getElementById("gameOverModal").style.display = "none"
     document.querySelector(".main").classList = "main"
-    playerSlot = messageData.slot
     currPlayer = messageData.currPlayer;
-    currSlot = messageData.currSlot;
 
     const boardElement = document.getElementById('game-board');
     boardElement.updateGrid(messageData.board);
-    updatePlayerTurn(messageData.currSlot)
+    updatePlayerTurn(messageData.currPlayer)
     // Move this to the backend
     // messageData.turn = messageData.currPlayer == document.getElementById("homePlayer").innerHTML
 }
@@ -66,12 +69,15 @@ const initializeSocket = () => {
     socket.onmessage = function (event) {
         let messageData = JSON.parse(event.data);
         console.log(messageData)
-        if (messageData.message == "Game Started") {
-            joinUIUpdate(messageData);
-        } else if (messageData.message == "Update Game") {
+        if (messageData.message == "Player Joined") {
+            playerId = messageData.playerId
+            playerName = messageData.playerName
+        }
+        else if (messageData.message == "Update Game") {
+            joinUIUpdate(messageData)
             const boardElement = document.getElementById('game-board');
             boardElement.updateGrid(messageData.board);
-            updatePlayerTurn(messageData.currSlot)
+            updatePlayerTurn(messageData.currPlayer)
         } else if (messageData.message == "Game Over") {
             gameOverUpdate(messageData)
         } else if (messageData.message == "ReMatch Request") {

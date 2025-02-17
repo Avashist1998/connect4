@@ -45,7 +45,7 @@ func HandleMakeMatch(w http.ResponseWriter, r *http.Request) {
 func HandleMatch(w http.ResponseWriter, r *http.Request, matchID string) {
 
 	datastore := store.MatchManagerFactory()
-	data, err := datastore.GetSessionData(matchID)
+	data, err := datastore.GetMatchSession(matchID)
 	if err != nil {
 		response := map[string]interface{}{
 			"message": "invalid match id",
@@ -103,7 +103,7 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			utils.ReturnJson(w, response, http.StatusBadGateway)
 			return
 		}
-		if !game.IsGameOver(match) {
+		if !match.IsGameOver() {
 			// TODO: We need to update the yellow so that bot can be any slot
 			move := match.GetBotMove(matchData.Level, "YELLOW")
 			game.MakeMove(match, "YELLOW", move)
@@ -116,7 +116,7 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			"winner":     "",
 		}
 
-		if game.IsGameOver(match) {
+		if match.IsGameOver() {
 			response = map[string]interface{}{
 				"message":    "Game Over",
 				"board":      match.GetBoard(),
@@ -185,7 +185,7 @@ func HandleLocalPlay(w http.ResponseWriter, r *http.Request, matchID string, mat
 			"winner":     "",
 		}
 
-		if game.IsGameOver(match) {
+		if match.IsGameOver() {
 			response = map[string]interface{}{
 				"message":    "Game Over",
 				"board":      match.GetBoard(),
