@@ -27,7 +27,7 @@ Most Important (Core Game Logic & Rules)
 
     GetWinner() string
         Returns the correct winner when the game ends.
-*\
+*/
 
 func TestGameInitialization(t *testing.T) {
 	// Example test case
