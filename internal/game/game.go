@@ -7,12 +7,13 @@ import (
 )
 
 type Game struct {
-	moveCount int
-	Player1   string
-	Player2   string
-	winner    string
-	moves     []int
-	board     []int
+	moveCount       int
+	Player1         string
+	Player2         string
+	winner          string
+	moves           []int
+	board           []int
+	currentPlayerID string
 }
 
 func (game *Game) GetBoard() []int {
@@ -22,22 +23,28 @@ func (game *Game) GetBoard() []int {
 	return boardCopy
 }
 
-func NewGame(Player1 string, Player2 string) *Game {
-	return &Game{
-		Player1:   Player1,
-		Player2:   Player2,
-		moveCount: 0,
-		moves:     []int{},
-		board:     make([]int, 42),
-		winner:    "",
+func NewGame(playerID1 string, playerID2 string) (*Game, error) {
+
+	if playerID1 == playerID2 {
+		err := errors.New("players cannot be the same ID")
+		return nil, err
 	}
+	return &Game{
+		Player1:         playerID1,
+		Player2:         playerID2,
+		currentPlayerID: playerID1,
+		moveCount:       0,
+		moves:           []int{},
+		board:           make([]int, 42),
+		winner:          "",
+	}, nil
 }
 
-func (game *Game) isPlayerTurn(slot string) bool {
-	if game.moveCount%2 == 0 {
-		return slot == "RED"
+func (game *Game) isPlayerTurn(playerID string) bool {
+	if playerID == game.currentPlayerID {
+		return true
 	}
-	return slot == "YELLOW"
+	return false
 }
 
 func (game *Game) isMoveValid(move int) bool {
@@ -108,7 +115,7 @@ func (game *Game) GetWinner() string {
 	return game.winner
 }
 
-func IsGameOver(game *Game) bool {
+func (game *Game) IsGameOver() bool {
 	if len(game.moves) == 42 {
 		return true
 	}
@@ -120,16 +127,16 @@ func (game *Game) updateGameWinner(index int) {
 		return
 	}
 
-	if game.GetCurrSlot() == "RED" {
+	if game.currentPlayerID == game.Player2 {
 		game.winner = game.Player2
 		return
 	}
 	game.winner = game.Player1
 }
 
-func (game *Game) makeMove(move int, slot string) int {
+func (game *Game) makeMove(move int) int {
 	val := 0
-	if slot == "RED" {
+	if game.currentPlayerID == game.Player1 {
 		val = 1
 	} else {
 		val = -1
@@ -162,8 +169,8 @@ func (game *Game) getConnectionCount(index int) int {
 	return count
 }
 
-func MakeMove(game *Game, slot string, move int) error {
-	if !game.isPlayerTurn(slot) {
+func (game *Game) MakeMove(playerID string, move int) error {
+	if !game.isPlayerTurn(playerID) {
 		return errors.New("not your turn")
 	}
 
@@ -174,10 +181,15 @@ func MakeMove(game *Game, slot string, move int) error {
 	if len(game.moves) == 42 || game.winner != "" {
 		return errors.New("game is over")
 	}
-	index := game.makeMove(move, slot)
+	index := game.makeMove(move)
 	game.moveCount += 1
 	game.moves = append(game.moves, move)
 	game.updateGameWinner(index)
+	if game.currentPlayerID == game.Player2 {
+		game.currentPlayerID = game.Player1
+	} else {
+		game.currentPlayerID = game.Player2
+	}
 	return nil
 }
 
@@ -188,10 +200,7 @@ func ShowGame(game *Game) {
 }
 
 func (game *Game) GetCurrPlayer() string {
-	if game.isPlayerTurn("RED") {
-		return game.Player1
-	}
-	return game.Player2
+	return game.currentPlayerID
 }
 
 func (game *Game) GetCurrSlot() string {
@@ -203,11 +212,6 @@ func (game *Game) GetCurrSlot() string {
 
 func (game *Game) GetMoves() []int {
 	return game.moves
-}
-
-func UpdateNames(game *Game, player1 string, player2 string) {
-	game.Player1 = player1
-	game.Player2 = player2
 }
 
 func (game *Game) getValidMoves() []int {
@@ -226,57 +230,46 @@ func (game *Game) getRandomMove() int {
 	return int(rand.Float32() * float32(len(moves)))
 }
 
-func (game *Game) simulateWinnerMove(move int, slot string) (bool, error) {
+func (game *Game) simulateWinnerMove(move int) (bool, error) {
 
 	if !game.isMoveValid(move) {
 		return false, errors.New("invalid move")
 	}
 
-	index := game.makeMove(move, slot)
+	index := game.makeMove(move)
 	res := game.isWinner(index)
 	game.resetIndex(index)
 	return res, nil
 }
 
-func (game *Game) getMoveScore(move int, slot string) (int, error) {
-	opp := "YELLOW"
-	if slot == "YELLOW" {
-		opp = "RED"
-	}
+func (game *Game) getMoveScore(move int) (int, error) {
 	if !game.isMoveValid(move) {
 		return -100, errors.New("invalid move")
 	}
 	score := 0
-	index := game.makeMove(move, slot)
+	index := game.makeMove(move)
 	score += game.getConnectionCount(index)
 	game.resetIndex(index)
 
-	index = game.makeMove(move, opp)
+	index = game.makeMove(move)
 	score += game.getConnectionCount(index)
 	game.resetIndex(index)
 
 	return score, nil
 }
 
-func (game *Game) getSmartMove(slot string) int {
+func (game *Game) getSmartMove() int {
 
 	moves := game.getValidMoves()
 	for _, move := range moves {
-		res, err := game.simulateWinnerMove(move, slot)
+		res, err := game.simulateWinnerMove(move)
 		if err == nil && res {
 			return move
 		}
 	}
 
-	oppSlot := ""
-	if slot == "RED" {
-		oppSlot = "YELLOW"
-	} else {
-		oppSlot = "RED"
-	}
-
 	for _, move := range moves {
-		res, err := game.simulateWinnerMove(move, oppSlot)
+		res, err := game.simulateWinnerMove(move)
 		if err == nil && res {
 			return move
 		}
@@ -285,7 +278,7 @@ func (game *Game) getSmartMove(slot string) int {
 	bestMove := moves[0]
 	bestScore := -4
 	for _, move := range moves {
-		score, err := game.getMoveScore(move, slot)
+		score, err := game.getMoveScore(move)
 		if err == nil {
 			if score > bestScore {
 				bestMove = move
@@ -296,16 +289,16 @@ func (game *Game) getSmartMove(slot string) int {
 	return bestMove
 }
 
-func (game *Game) GetBotMove(level string, slot string) int {
+func (game *Game) GetBotMove(level string) int {
 	if level == "easy" {
 		return game.getRandomMove()
 	} else if level == "mid" {
 		if rand.Float32() > 0.7 {
-			return game.getSmartMove(slot)
+			return game.getSmartMove()
 		}
 		return game.getRandomMove()
 	} else if level == "hard" {
-		return game.getSmartMove(slot)
+		return game.getSmartMove()
 	}
 	return game.getRandomMove()
 }

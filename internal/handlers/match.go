@@ -33,9 +33,15 @@ func HandleMakeMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	datastore := store.MatchManagerFactory()
-	var matchID string = datastore.CreateGame(data.Player1, data.Player2, data.Level, data.GameType)
+	var matchId string = datastore.CreateGame(data.Player1, data.Player2, data.Level, data.GameType)
+
+	if data.GameType == "live" {
+		sessionStore := store.SessionFactory()
+		_ = sessionStore.CreateSession(matchId)
+	}
+
 	response := map[string]interface{}{
-		"match_id": matchID,
+		"match_id": matchId,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -69,8 +75,8 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 	switch r.Method {
 	case http.MethodGet:
 		var data = models.MatchPageData{
-			Player1:    match.Player1,
-			Player2:    match.Player2,
+			Player1:    matchData.PlayerAName,
+			Player2:    "bot",
 			CurrPlayer: match.GetCurrPlayer(),
 		}
 		utils.RenderTemplate(w, "match.html", data)
@@ -95,7 +101,7 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			utils.ReturnJson(w, response, http.StatusBadRequest)
 			return
 		}
-		err = game.MakeMove(match, data.Slot, data.Move)
+		err = match.MakeMove(data.PlayerId, data.Move)
 		if err != nil {
 			response := map[string]interface{}{
 				"message": "invalid move or game over",
@@ -103,10 +109,9 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			utils.ReturnJson(w, response, http.StatusBadGateway)
 			return
 		}
-		if !game.IsGameOver(match) {
-			// TODO: We need to update the yellow so that bot can be any slot
-			move := match.GetBotMove(matchData.Level, "YELLOW")
-			game.MakeMove(match, "YELLOW", move)
+		if !match.IsGameOver() {
+			move := match.GetBotMove(matchData.Level)
+			match.MakeMove("bot", move)
 		}
 		response := map[string]interface{}{
 			"message":    "Move successfully updated",
@@ -116,7 +121,7 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 			"winner":     "",
 		}
 
-		if game.IsGameOver(match) {
+		if match.IsGameOver() {
 			response = map[string]interface{}{
 				"message":    "Game Over",
 				"board":      match.GetBoard(),
@@ -127,7 +132,15 @@ func MatchBotPlayHandler(w http.ResponseWriter, r *http.Request, matchID string,
 		utils.ReturnJson(w, response, http.StatusOK)
 
 	case http.MethodDelete:
-		matchData.Game = game.NewGame(match.Player1, match.Player2)
+		newGame, err := game.NewGame(match.Player1, match.Player2)
+		if err != nil {
+			response := map[string]interface{}{
+				"message": "invalid game",
+			}
+			utils.ReturnJson(w, response, http.StatusBadRequest)
+			return
+		}
+		matchData.Game = newGame
 		response := map[string]interface{}{
 			"message": "Game has been reset",
 		}
@@ -140,9 +153,8 @@ func HandleLocalPlay(w http.ResponseWriter, r *http.Request, matchID string, mat
 	switch r.Method {
 	case http.MethodGet:
 		var data = models.MatchPageData{
-			Player1:    match.Player1,
-			Player2:    match.Player2,
-			CurrSlot:   match.GetCurrSlot(),
+			Player1:    matchData.PlayerAName,
+			Player2:    matchData.PlayerBName,
 			CurrPlayer: match.GetCurrPlayer(),
 		}
 		utils.RenderTemplate(w, "match.html", data)
@@ -169,7 +181,7 @@ func HandleLocalPlay(w http.ResponseWriter, r *http.Request, matchID string, mat
 			return
 		}
 
-		err = game.MakeMove(match, data.Slot, data.Move)
+		err = match.MakeMove(data.PlayerId, data.Move)
 		if err != nil {
 			response := map[string]interface{}{
 				"message": "invalid move or game over",
@@ -185,7 +197,7 @@ func HandleLocalPlay(w http.ResponseWriter, r *http.Request, matchID string, mat
 			"winner":     "",
 		}
 
-		if game.IsGameOver(match) {
+		if match.IsGameOver() {
 			response = map[string]interface{}{
 				"message":    "Game Over",
 				"board":      match.GetBoard(),
@@ -196,11 +208,15 @@ func HandleLocalPlay(w http.ResponseWriter, r *http.Request, matchID string, mat
 		utils.ReturnJson(w, response, http.StatusOK)
 
 	case http.MethodDelete:
-		matchData.Game = game.NewGame(match.Player1, match.Player2)
-		response := map[string]interface{}{
-			"message": "Game has been reset",
+		newGame, err := game.NewGame(match.Player1, match.Player2)
+		if err != nil {
+			response := map[string]interface{}{
+				"message": "invalid game",
+			}
+			utils.ReturnJson(w, response, http.StatusBadRequest)
+			return
 		}
-		utils.ReturnJson(w, response, http.StatusOK)
+		matchData.Game = newGame
 
 	default:
 		response := map[string]interface{}{

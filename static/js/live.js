@@ -4,6 +4,36 @@ var playerSlot = ""
 var currPlayer = ""
 var currSlot = "RED"
 
+const getSessionId = async () => {
+
+    const currentSessionId = await localStorage.getItem("sessionId");
+    if (currentSessionId !== null) {
+        // validation the session id 
+        let res = await fetch(config.httpURL + "/session/" + currentSessionId, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+        });
+        if (res.status != 200) {
+            localStorage.removeItem("sessionId");
+            await getSessionId();
+            return;
+        }
+        
+        let data = await res.json();
+        console.log("Valid Session ID: " + data["session_id"]);
+    }
+    else {
+        let res = await fetch(config.httpURL + "/session", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+        });
+        let data = await res.json();
+        localStorage.setItem("sessionId", data["session_id"]);
+        console.log("Session ID: " + data["session_id"]);
+    }
+}
+
+
 const updatePlayerTurn = (playerHeadingID) => {
     if (playerHeadingID == "RED") {
         document.getElementById("homePlayer").style.backgroundColor = "green"
@@ -19,19 +49,24 @@ const joinUIUpdate = (messageData) => {
 
     document.getElementById("homePlayer").innerHTML = messageData["player1"];
     document.getElementById("awayPlayer").innerHTML = messageData["player2"];
+    document.getElementById("homePlayerColor").classList.add(messageData["player1Color"].toLowerCase() + '-circle');
+    document.getElementById("awayPlayerColor").classList.add(messageData["player2Color"].toLowerCase() + '-circle');
 
     document.getElementById("waitingScreen").hide();
     document.getElementById("game").style.display = 'block';
     document.getElementById("rematchModal").style.display = "none"
     document.getElementById("gameOverModal").style.display = "none"
     document.querySelector(".main").classList = "main"
-    playerSlot = messageData.slot
     currPlayer = messageData.currPlayer;
-    currSlot = messageData.currSlot;
-
+    
+    if (currPlayer == "player1") {
+        currSlot = messageData.player1Color;
+    } else {
+        currSlot = messageData.player2Color;
+    }
     const boardElement = document.getElementById('game-board');
     boardElement.updateGrid(messageData.board);
-    updatePlayerTurn(messageData.currSlot)
+    updatePlayerTurn(currSlot)
     // Move this to the backend
     // messageData.turn = messageData.currPlayer == document.getElementById("homePlayer").innerHTML
 }
@@ -60,13 +95,23 @@ const gameOverUpdate = (messageData) => {
 }
 
 // Initialize WebSocket connection and set up message handling
-const initializeSocket = () => {
-    socket = new WebSocket(config.liveWSEndpoint);
+const initializeSocket = async () => {
+    const currentSessionId = await localStorage.getItem("sessionId");
+    const matchId = window.location.href.split("/").pop();
+    socket = new WebSocket(config.liveWSEndpoint + "?sessionId=" + currentSessionId + "&matchId=" + matchId);
+
+    socket.onopen = function () {
+        console.log("WebSocket connection opened")
+        if (socket.readyState === WebSocket.OPEN) {
+            console.log("Sending join message")
+            socket.send(JSON.stringify({type: "join"}));
+        }
+    }
 
     socket.onmessage = function (event) {
         let messageData = JSON.parse(event.data);
         console.log(messageData)
-        if (messageData.message == "Game Started") {
+        if (messageData.message == "Game State") {
             joinUIUpdate(messageData);
         } else if (messageData.message == "Update Game") {
             const boardElement = document.getElementById('game-board');
@@ -86,7 +131,7 @@ const initializeSocket = () => {
     
     socket.onclose = function () {
         console.log("WebSocket connection closed");
-        window.location.href = config.httpURL
+        // window.location.href = config.httpURL
     };
 };
 
@@ -94,7 +139,7 @@ const initializeSocket = () => {
 const sendPing = (playerName) => {
     const matchID = window.location.href.split("/").pop()
     if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({Type: "ping", Player: playerName, MatchID: matchID}))
+        socket.send(JSON.stringify({type: "ping"}))
     }  else {
         console.error("WebSocket is not connected");
     }
@@ -110,15 +155,24 @@ const sendMove = (player, slot, move) => {
     }
 };
 
-initializeSocket()
+getSessionId().then(() => {
+    const name = localStorage.getItem("name")
+    if (name !== null) {
+        document.getElementById("playerName").value = name;
+    }
+    initializeSocket()
+}).catch(() => {
+    console.error("Something went wrong");
+});
 
 const onClickJoin = () => {
     const matchID = window.location.href.split("/").pop()
     playerName = document.getElementById("playerName").value;
+    localStorage.setItem("name", playerName);
     document.getElementById("joinModal").style.display = "none";
     document.getElementById("waitingScreen").show();
     if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({Type: "join", Player: playerName, MatchID: matchID}))
+        socket.send(JSON.stringify({type: "ready", name: playerName}))
         setInterval(() => {sendPing(playerName)}, 5000);
         addColumnClickListeners()
     } else {

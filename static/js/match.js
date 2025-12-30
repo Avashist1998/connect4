@@ -6,8 +6,7 @@ const makeMoveRequest = async (player, slot, move) => {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            "Player": player,
-            "Slot": slot,
+            "PlayerId": player,
             "Move": Number(move),
         }),
     });

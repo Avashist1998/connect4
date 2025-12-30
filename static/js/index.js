@@ -1,5 +1,35 @@
 let socket = null
 
+
+const getSessionId = async () => {
+
+    const currentSessionId = await localStorage.getItem("sessionId");
+    if (currentSessionId !== null) {
+        // validation the session id 
+        let res = await fetch(config.httpURL + "/session/" + currentSessionId, {
+            method: "GET",
+            headers: {"Content-Type": "application/json"},
+        });
+        if (res.status != 200) {
+            localStorage.removeItem("sessionId");
+            getSessionId();
+            return;
+        }
+        let data = await res.json();
+        console.log("Session ID: " + data["session_id"]);
+    }
+    else {
+        let res = await fetch(config.httpURL + "/session", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+        });
+        let data = await res.json();
+        localStorage.setItem("sessionId", data["session_id"]);
+        console.log("Session ID: " + data["session_id"]);
+    }
+}
+
+
 const createGame = async (type, player1, player2, level = "") => {
     let res = await fetch(config.httpURL, {
         method: "POST",
@@ -140,4 +170,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lobby) {
         lobby.hide()
     }
+});
+
+
+console.log("Fuck this place")
+getSessionId().then(() => {}).catch(() => {
+    console.error("Something went wrong");
 });

@@ -36,12 +36,20 @@ func MakeMatchManager() *MatchManager {
 }
 
 func (manager *MatchManager) CreateGame(playerAName string, playerBName string, level string, gameType string) string {
-
+	var playerBId string
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 	var matchId string = utils.GenerateMatchId(manager.Matches)
-	var match *game.Game = game.NewGame(playerAName, playerBName)
-	var session = &models.MatchSession{Game: match, Level: level, GameType: gameType}
+	var playerAId = utils.GenerateId(10)
+	playerBId = "bot"
+	if gameType != "bot" {
+		playerBId = utils.GenerateId(10)
+	}
+	match, err := game.NewGame(playerAId, playerBId)
+	if err != nil {
+		return ""
+	}
+	var session = &models.MatchSession{Game: match, Level: level, GameType: gameType, PlayerAId: playerAId, PlayerBId: playerBId, PlayerAName: playerAName, PlayerBName: playerBName}
 	manager.Matches[matchId] = session
 
 	return matchId
@@ -84,16 +92,32 @@ func (manager *MatchManager) GetMatch(id string) (*game.Game, error) {
 	return match.Game, nil
 }
 
-func (manager *MatchManager) ResetGame(id string, flip bool) (MatchState, error) {
+func (manager *MatchManager) GetMatchGameType(id string) (string, error) {
 	match, ok := manager.Matches[id]
+	if !ok {
+		return "", errors.New("Match does not exist")
+	}
+	return match.GameType, nil
+}
+
+func (manager *MatchManager) ResetGame(id string, flip bool) (MatchState, error) {
+	matchSession, ok := manager.Matches[id]
 	if !ok {
 		return MatchState{}, errors.New("Match does not exist")
 	}
 
 	if flip {
-		match.Game = game.NewGame(match.Game.Player2, match.Game.Player1)
+		newGame, err := game.NewGame(matchSession.PlayerBId, matchSession.PlayerAId)
+		if err != nil {
+			return MatchState{}, err
+		}
+		matchSession.Game = newGame
 	} else {
-		match.Game = game.NewGame(match.Game.Player1, match.Game.Player2)
+		newGame, err := game.NewGame(matchSession.PlayerAId, matchSession.PlayerBId)
+		if err != nil {
+			return MatchState{}, err
+		}
+		matchSession.Game = newGame
 	}
 
 	return manager.GetMatchState(id)

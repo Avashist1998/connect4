@@ -7,16 +7,19 @@ import (
 	"net/http"
 )
 
-
 func main() {
 
-	port := "0.0.0.0:9080"
+	port := "127.0.0.1:9080"
+	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
-	http.HandleFunc("/", handlers.HomeHandler)
-	http.HandleFunc("/ws/live", handlers.LiveWebSocketHandler)
-	http.HandleFunc("/ws/lobby", handlers.LobbyWebSocketHandler)
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	mux.HandleFunc("/session/{sessionId}", handlers.HandleSessionGet)
+	mux.HandleFunc("/session", handlers.HandleSessionPost)
+	mux.HandleFunc("/ws/live", handlers.LiveWebSocketHandler)
+
+	mux.HandleFunc("/", handlers.HomeHandler)
+	// http.HandleFunc("/ws/lobby", handlers.LobbyWebSocketHandler)
 	log.Println("Starting server on %s", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	log.Fatal(http.ListenAndServe(port, mux))
 }
-   
