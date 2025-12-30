@@ -75,7 +75,10 @@ func (l *Lobby) RemovePlayer(playerID string) {
 		}
 	}
 
+	// Close channel first to stop ListenToMessages from writing new messages
 	close(player.LobbyMsg)
+	// Close connection after channel is closed (ListenToMessages will exit its loop)
+	// Use write mutex to ensure no write is in progress when closing
 	player.Conn.Close()
 	delete(l.Players, playerID)
 	fmt.Printf("Player %s disconnected\n", playerID)
@@ -122,7 +125,10 @@ func (l *Lobby) createMatch(manger *MatchManager) {
 	player1 := l.WaitingQueue[0]
 	player2 := l.WaitingQueue[1]
 	matchID := manger.CreateGame(player1.ID, player2.ID, "", "live")
-	player1.Conn.WriteJSON(map[string]interface{}{"type": "Match Info", "matchID": matchID})
-	player2.Conn.WriteJSON(map[string]interface{}{"type": "Match Info", "matchID": matchID})
+	matchInfoMsg, err := json.Marshal(map[string]interface{}{"type": "Match Info", "matchID": matchID})
+	if err == nil {
+		player1.LobbyMsg <- string(matchInfoMsg)
+		player2.LobbyMsg <- string(matchInfoMsg)
+	}
 
 }
