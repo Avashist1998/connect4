@@ -137,3 +137,73 @@ body {
 .form-group { /* Add spacing between inputs using margin */
     margin-bottom: 10px;
 }
+
+/* View Count Sidebar Styles */
+.view-count-sidebar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.view-count-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: rgba(124, 68, 79, 0.95);
+    color: white;
+    padding: 12px 18px;
+    border-radius: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.view-count-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.view-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.view-count-label {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.view-count-number {
+    font-size: 18px;
+    font-weight: 700;
+    min-width: 24px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .view-count-sidebar {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .view-count-badge {
+        padding: 10px 14px;
+        gap: 6px;
+    }
+    
+    .view-count-label {
+        font-size: 12px;
+    }
+    
+    .view-count-number {
+        font-size: 16px;
+    }
+    
+    .view-icon {
+        width: 18px;
+        height: 18px;
+    }
+}

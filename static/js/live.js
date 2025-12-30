@@ -57,6 +57,7 @@ const joinUIUpdate = (messageData) => {
     document.getElementById("rematchModal").style.display = "none"
     document.getElementById("gameOverModal").style.display = "none"
     document.querySelector(".main").classList = "main"
+    document.getElementById("viewCount").innerHTML = messageData["connection_count"];
     currPlayer = messageData.currPlayer;
     
     if (currPlayer == "player1") {
