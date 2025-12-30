@@ -250,13 +250,26 @@ func (s *Session) BroadcastGameState() {
 	}
 	s.AddToMessageQueue(message)
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	// Collect connections and player info while holding the lock
+	connections := make([]struct {
+		Conn     *websocket.Conn
+		PlayerID string
+	}, 0, len(s.connections))
 	for _, player := range s.connections {
+		if player.Conn != nil {
+			connections = append(connections, struct {
+				Conn     *websocket.Conn
+				PlayerID string
+			}{player.Conn, player.ID})
+		}
+	}
+	s.mu.Unlock()
+	for _, player := range connections {
 		switch {
-		case player.ID == s.Game.Player1:
+		case player.PlayerID == s.Game.Player1:
 			message["you"] = "player1"
 			player.Conn.WriteJSON(message)
-		case player.ID == s.Game.Player2:
+		case player.PlayerID == s.Game.Player2:
 			message["you"] = "player2"
 			player.Conn.WriteJSON(message)
 		default:
@@ -267,9 +280,19 @@ func (s *Session) BroadcastGameState() {
 }
 
 func (s *Session) BroadcastMessage(message interface{}) {
+	fmt.Println("Broadcasting Message", message)
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	fmt.Println("Lock acquired")
+	connections := make([]*websocket.Conn, 0, len(s.connections))
 	for _, player := range s.connections {
-		player.Conn.WriteJSON(message)
+		if player.Conn != nil {
+			connections = append(connections, player.Conn)
+		}
 	}
+	s.mu.Unlock()
+
+	for _, conn := range connections {
+		conn.WriteJSON(message)
+	}
+	fmt.Println("Message broadcasted")
 }

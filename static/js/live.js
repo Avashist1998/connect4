@@ -113,6 +113,9 @@ const initializeSocket = async () => {
         console.log(messageData)
         if (messageData.message == "Game State") {
             joinUIUpdate(messageData);
+        } else if (messageData.type == "chat") {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.addMessage(messageData);
         } else if (messageData.message == "Update Game") {
             const boardElement = document.getElementById('game-board');
             boardElement.updateGrid(messageData.board);
@@ -216,4 +219,19 @@ const rematchResponse = (res) => {
 document.getElementById("copyButton").addEventListener("click", () => {
     navigator.clipboard.writeText(window.location.href);
     alert("URL adding to clipboard, Share with your friends")
+})
+
+
+const sendMessage = (message) => {
+    const matchID = window.location.href.split("/").pop()
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({Type: "chat", name: playerName, message: message}));
+    } else {
+        console.error("WebSocket is not connected");
+    }
+};
+
+document.addEventListener("chat-message", (event) => {
+    let message = event.detail.message;
+    sendMessage(message);
 })

@@ -221,6 +221,7 @@ func handleMoveMessage(conn *websocket.Conn, matchId string, sessionId string, m
 }
 
 func handleChatMessage(conn *websocket.Conn, matchId string, sessionId string, msg models.Message) {
+	fmt.Println("handleChatMessage", msg)
 	sessionStore := store.SessionFactory()
 	session, err := sessionStore.GetSession(matchId)
 	if err != nil {
@@ -240,6 +241,7 @@ func handleChatMessage(conn *websocket.Conn, matchId string, sessionId string, m
 		"message": msg.Message,
 		"player":  player.Name,
 	}
+	fmt.Println("message made is past the get connection", message)
 	session.BroadcastMessage(message)
 }
 
