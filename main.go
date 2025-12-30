@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	port := "127.0.0.1:9080"
+	port := "0.0.0.0:9080"
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
