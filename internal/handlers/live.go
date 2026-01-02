@@ -61,7 +61,7 @@ func handleLobbyJoinMessage(conn *websocket.Conn, matchId string, sessionId stri
 			conn.WriteJSON(errorMessage)
 			conn.Close()
 		}
-		message = map[string]string{"message": "Reconnected to old session"}
+		message = map[string]string{"message": "reconnected"}
 	} else {
 		fmt.Println("Adding new Player to the Session", sessionId, playerId)
 		_, err = session.AddConnection(sessionId, playerId, conn)
