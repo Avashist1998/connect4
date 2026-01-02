@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"testing"
 	"time"
 
@@ -17,7 +18,7 @@ const baseURL = "http://0.0.0.0:9080"
 
 func createMatch() (string, error) {
 	// Create the request body
-	requestData := map[string]string{
+	requestData := map[string]interface{}{
 		"GameType":    "live",
 		"Player1":     "player1",
 		"Player2":     "player2",
@@ -127,7 +128,7 @@ func connectWebSocket(matchId, sessionId string) (*websocket.Conn, error) {
 }
 
 // sendMessage sends a JSON message through the WebSocket connection
-func sendMessage(conn *websocket.Conn, message interface{}) error {
+func sendMessage(conn *websocket.Conn, message map[string]interface{}) error {
 	return conn.WriteJSON(message)
 }
 
@@ -162,14 +163,6 @@ func waitForGameState(conn *websocket.Conn, timeout time.Duration) (map[string]i
 }
 
 func TestReconnect(t *testing.T) {
-	//
-	// We create a match and get the match id
-	// We get a session id
-	// Connect to the server to the match using the websocket using /ws/live?matchId=matchId&sessionId=sessionId
-	// Send {"type": "join"} then {"type": "ready", "name": "name"}
-	// Then break the conneciton
-	// Then reconnect to see if the session is connected
-
 	// Create a match
 	matchId, err := createMatch()
 	if err != nil {
@@ -189,7 +182,7 @@ func TestReconnect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to connect to websocket: %v", err)
 	}
-	sendMessage(conn, map[string]string{"type": "join"})
+	sendMessage(conn, map[string]interface{}{"type": "join"})
 
 	joinResp, err := readMessage(conn, 5*time.Second)
 	if err != nil {
@@ -199,7 +192,7 @@ func TestReconnect(t *testing.T) {
 		t.Fatalf("Expected 'joined session', got: %v", joinResp["message"])
 	}
 
-	sendMessage(conn, map[string]string{"type": "ready", "name": "player1"})
+	sendMessage(conn, map[string]interface{}{"type": "ready", "name": "player1"})
 	readyResp, err := readMessage(conn, 5*time.Second)
 	if err != nil {
 		t.Fatalf("Failed to read ready response: %v", err)
@@ -229,7 +222,7 @@ func TestReconnect(t *testing.T) {
 	defer conn.Close()
 	t.Logf("Reconnected to websocket")
 
-	sendMessage(conn, map[string]string{"type": "join"})
+	sendMessage(conn, map[string]interface{}{"type": "join"})
 	joinRespReconnect, err := readMessage(conn, 5*time.Second)
 	if err != nil {
 		t.Fatalf("Failed to read join response: %v", err)
@@ -239,7 +232,7 @@ func TestReconnect(t *testing.T) {
 		t.Fatalf("Expected 'reconnected', got: %v", joinRespReconnect["message"])
 	}
 
-	sendMessage(conn, map[string]string{"type": "ready", "name": "player1"})
+	sendMessage(conn, map[string]interface{}{"type": "ready", "name": "player1"})
 	readyRespReconnect, err := readMessage(conn, 2*time.Second)
 	if err != nil {
 		t.Fatalf("Failed to read ready response: %v", err)
@@ -263,191 +256,187 @@ func TestReconnect(t *testing.T) {
 	}
 }
 
-// func TestReconnectTwoPlayers(t *testing.T) {
-// 	//
-// 	// We create a match and get the match id
-// 	// We get a session id - Player 1
-// 	// We get another session id - Player 2
-// 	// Connect to the server to the match using the websocket using /ws/live?matchId=matchId&sessionId=sessionId - Player 1
-// 	// Connect to the server to the match using the websocket using /ws/live?matchId=matchId&sessionId=sessionId - Player 2
-// 	// Send {"type": "join"} then {"type": "ready", "name": "player1"}
-// 	// Send {"type": "join"} then {"type": "ready", "name": "player2"}
+func TestReconnectTwoPlayers(t *testing.T) {
+	// Create a match
+	matchId, err := createMatch()
+	if err != nil {
+		t.Fatalf("Failed to create match: %v", err)
+	}
+	t.Logf("Created match with ID: %s", matchId)
 
-// 	// After player 1 we should get the game state from both players make sure they are the same
-// 	// Then break the connection - Player 1
-// 	// Then reconnect to see if the session is connected - Player 1
-// 	// Then check if the game state is the same as the first move
+	// Get session id - Player 1
+	sessionId1, err := getSessionId()
+	if err != nil {
+		t.Fatalf("Failed to get session ID for player 1: %v", err)
+	}
+	t.Logf("Got session ID for player 1: %s", sessionId1)
 
-// 	// Create a match
-// 	matchId, err := createMatch()
-// 	if err != nil {
-// 		t.Fatalf("Failed to create match: %v", err)
-// 	}
-// 	t.Logf("Created match with ID: %s", matchId)
+	// Get session id - Player 2
+	sessionId2, err := getSessionId()
+	if err != nil {
+		t.Fatalf("Failed to get session ID for player 2: %v", err)
+	}
+	t.Logf("Got session ID for player 2: %s", sessionId2)
 
-// 	// Get session id - Player 1
-// 	sessionId1, err := getSessionId()
-// 	if err != nil {
-// 		t.Fatalf("Failed to get session ID for player 1: %v", err)
-// 	}
-// 	t.Logf("Got session ID for player 1: %s", sessionId1)
+	// Connect Player 1
+	conn1, err := connectWebSocket(matchId, sessionId1)
+	if err != nil {
+		t.Fatalf("Failed to connect player 1: %v", err)
+	}
+	defer conn1.Close()
+	t.Logf("Player 1 connected")
 
-// 	// Get session id - Player 2
-// 	sessionId2, err := getSessionId()
-// 	if err != nil {
-// 		t.Fatalf("Failed to get session ID for player 2: %v", err)
-// 	}
-// 	t.Logf("Got session ID for player 2: %s", sessionId2)
+	// Connect Player 2
+	conn2, err := connectWebSocket(matchId, sessionId2)
+	if err != nil {
+		t.Fatalf("Failed to connect player 2: %v", err)
+	}
+	defer conn2.Close()
+	t.Logf("Player 2 connected")
 
-// 	// Connect Player 1
-// 	conn1, err := connectWebSocket(matchId, sessionId1)
-// 	if err != nil {
-// 		t.Fatalf("Failed to connect player 1: %v", err)
-// 	}
-// 	defer conn1.Close()
-// 	t.Logf("Player 1 connected")
+	// Send join message - Player 1
+	if err := sendMessage(conn1, map[string]interface{}{"type": "join"}); err != nil {
+		t.Fatalf("Failed to send join message for player 1: %v", err)
+	}
+	t.Logf("Player 1 sent join message")
 
-// 	// Connect Player 2
-// 	conn2, err := connectWebSocket(matchId, sessionId2)
-// 	if err != nil {
-// 		t.Fatalf("Failed to connect player 2: %v", err)
-// 	}
-// 	defer conn2.Close()
-// 	t.Logf("Player 2 connected")
+	// Read join response - Player 1
+	joinResp1, err := readMessage(conn1, 2*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to read join response for player 1: %v", err)
+	}
+	t.Logf("Player 1 join response: %v", joinResp1)
 
-// 	// Send join message - Player 1
-// 	if err := sendMessage(conn1, "join", ""); err != nil {
-// 		t.Fatalf("Failed to send join message for player 1: %v", err)
-// 	}
-// 	t.Logf("Player 1 sent join message")
+	// Send join message - Player 2
+	if err := sendMessage(conn2, map[string]interface{}{"type": "join"}); err != nil {
+		t.Fatalf("Failed to send join message for player 2: %v", err)
+	}
+	t.Logf("Player 2 sent join message")
 
-// 	// Read join response - Player 1
-// 	joinResp1, err := readMessage(conn1, 5*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to read join response for player 1: %v", err)
-// 	}
-// 	t.Logf("Player 1 join response: %v", joinResp1)
+	// Read join response - Player 2
+	joinResp2, err := readMessage(conn2, 2*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to read join response for player 2: %v", err)
+	}
+	t.Logf("Player 2 join response: %v", joinResp2)
 
-// 	// Send join message - Player 2
-// 	if err := sendMessage(conn2, "join", ""); err != nil {
-// 		t.Fatalf("Failed to send join message for player 2: %v", err)
-// 	}
-// 	t.Logf("Player 2 sent join message")
+	// Send ready message - Player 1
+	if err := sendMessage(conn1, map[string]interface{}{"type": "ready", "name": "player1"}); err != nil {
+		t.Fatalf("Failed to send ready message for player 1: %v", err)
+	}
+	t.Logf("Player 1 sent ready message")
 
-// 	// Read join response - Player 2
-// 	joinResp2, err := readMessage(conn2, 5*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to read join response for player 2: %v", err)
-// 	}
-// 	t.Logf("Player 2 join response: %v", joinResp2)
+	// Read ready response - Player 1
+	readyResp1, err := readMessage(conn1, 5*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to read ready response for player 1: %v", err)
+	}
+	t.Logf("Player 1 ready response: %v", readyResp1)
 
-// 	// Send ready message - Player 1
-// 	if err := sendMessage(conn1, "ready", "player1"); err != nil {
-// 		t.Fatalf("Failed to send ready message for player 1: %v", err)
-// 	}
-// 	t.Logf("Player 1 sent ready message")
+	// Send ready message - Player 2
+	if err := sendMessage(conn2, map[string]interface{}{"type": "ready", "name": "player2"}); err != nil {
+		t.Fatalf("Failed to send ready message for player 2: %v", err)
+	}
+	t.Logf("Player 2 sent ready message")
 
-// 	// Read ready response - Player 1
-// 	readyResp1, err := readMessage(conn1, 5*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to read ready response for player 1: %v", err)
-// 	}
-// 	t.Logf("Player 1 ready response: %v", readyResp1)
+	// Read ready response - Player 2
+	readyResp2, err := readMessage(conn2, 5*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to read ready response for player 2: %v", err)
+	}
+	t.Logf("Player 2 ready response: %v", readyResp2)
 
-// 	// Send ready message - Player 2
-// 	if err := sendMessage(conn2, "ready", "player2"); err != nil {
-// 		t.Fatalf("Failed to send ready message for player 2: %v", err)
-// 	}
-// 	t.Logf("Player 2 sent ready message")
+	// Wait for game state from both players
+	t.Logf("Waiting for game state from both players...")
+	gameState1, err := waitForGameState(conn1, 10*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to get game state for player 1: %v", err)
+	}
+	t.Logf("Player 1 received game state: %v", gameState1)
 
-// 	// Read ready response - Player 2
-// 	readyResp2, err := readMessage(conn2, 5*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to read ready response for player 2: %v", err)
-// 	}
-// 	t.Logf("Player 2 ready response: %v", readyResp2)
+	gameState2, err := waitForGameState(conn2, 10*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to get game state for player 2: %v", err)
+	}
+	t.Logf("Player 2 received game state: %v", gameState2)
 
-// 	// Wait for game state from both players
-// 	t.Logf("Waiting for game state from both players...")
-// 	gameState1, err := waitForGameState(conn1, 10*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to get game state for player 1: %v", err)
-// 	}
-// 	t.Logf("Player 1 received game state: %v", gameState1)
+	// Verify both players have the same game state
+	if !reflect.DeepEqual(gameState1["board"], gameState2["board"]) {
+		t.Errorf("Game boards don't match! Player 1: %v, Player 2: %v", gameState1["board"], gameState2["board"])
+	}
+	if gameState1["currPlayer"] != gameState2["currPlayer"] {
+		t.Errorf("Current players don't match! Player 1: %v, Player 2: %v", gameState1["currPlayer"], gameState2["currPlayer"])
+	}
+	if gameState1["you"] != "player1" {
+		t.Errorf("You don't match! Player 1: %v, Player 2: %v", gameState1["you"], gameState2["you"])
+	}
+	if gameState2["you"] != "player2" {
+		t.Errorf("You don't match! Player 1: %v, Player 2: %v", gameState1["you"], gameState2["you"])
+	}
+	t.Logf("Game states match between both players %v", gameState1)
 
-// 	gameState2, err := waitForGameState(conn2, 10*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to get game state for player 2: %v", err)
-// 	}
-// 	t.Logf("Player 2 received game state: %v", gameState2)
+	// Break the connection - Player 2
+	conn2.Close()
+	time.Sleep(500 * time.Millisecond)
 
-// 	// Verify both players have the same game state
-// 	if gameState1["board"] != gameState2["board"] {
-// 		t.Errorf("Game boards don't match! Player 1: %v, Player 2: %v", gameState1["board"], gameState2["board"])
-// 	}
-// 	if gameState1["currPlayer"] != gameState2["currPlayer"] {
-// 		t.Errorf("Current players don't match! Player 1: %v, Player 2: %v", gameState1["currPlayer"], gameState2["currPlayer"])
-// 	}
-// 	if gameState1["state"] != gameState2["state"] {
-// 		t.Errorf("Game states don't match! Player 1: %v, Player 2: %v", gameState1["state"], gameState2["state"])
-// 	}
-// 	t.Logf("Game states match between both players")
+	err = sendMessage(conn1, map[string]interface{}{"type": "move", "move": 0})
+	if err != nil {
+		t.Fatalf("Failed to send move message for player 1: %v", err)
+	}
+	t.Logf("Player 1 sent move message")
+	gameState1AfterMove, err := waitForGameState(conn1, 5*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to get game state for player 1: %v", err)
+	}
+	t.Logf("Player 1 received game state after move: %v", gameState1AfterMove)
 
-// 	// Store the initial game state for comparison after reconnect
-// 	initialBoard := gameState1["board"]
-// 	initialCurrPlayer := gameState1["currPlayer"]
-// 	initialState := gameState1["state"]
+	if reflect.DeepEqual(gameState1["board"], gameState1AfterMove["board"]) {
+		t.Fatalf("Game board didn't change after move! Before: %v, After: %v", gameState1["board"], gameState1AfterMove["board"])
+	}
 
-// 	// Break the connection - Player 1
-// 	t.Logf("Disconnecting player 1...")
-// 	conn1.Close()
+	conn2, err = connectWebSocket(matchId, sessionId2)
 
-// 	// Wait a bit for the connection to fully close
-// 	time.Sleep(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Failed to reconnect player 2: %v", err)
+	}
 
-// 	// Reconnect Player 1
-// 	t.Logf("Reconnecting player 1...")
-// 	conn1Reconnect, err := connectWebSocket(matchId, sessionId1)
-// 	if err != nil {
-// 		t.Fatalf("Failed to reconnect player 1: %v", err)
-// 	}
-// 	defer conn1Reconnect.Close()
-// 	t.Logf("Player 1 reconnected")
+	err = sendMessage(conn2, map[string]interface{}{"type": "join"})
+	if err != nil {
+		t.Fatalf("Failed to send join message for player 2: %v", err)
+	}
+	t.Logf("Player 2 sent join message")
+	joinResp2Reconnect, err := readMessage(conn2, 2*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to read join response for player 2: %v", err)
+	}
+	t.Logf("Player 2 join response after reconnect: %v", joinResp2Reconnect)
+	if joinResp2Reconnect["message"] != "reconnected" {
+		t.Fatalf("Expected 'reconnected', got: %v", joinResp2Reconnect["message"])
+	}
 
-// 	// Send join message again - Player 1 (reconnect)
-// 	if err := sendMessage(conn1Reconnect, "join", ""); err != nil {
-// 		t.Fatalf("Failed to send join message for reconnected player 1: %v", err)
-// 	}
+	err = sendMessage(conn2, map[string]interface{}{"type": "ready", "name": "player2"})
+	if err != nil {
+		t.Fatalf("Failed to send ready message for player 2: %v", err)
+	}
+	t.Logf("Player 2 sent ready message")
+	readyResp2Reconnect, err := readMessage(conn2, 5*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to read ready response for player 2: %v", err)
+	}
+	t.Logf("Player 2 ready response after reconnect: %v", readyResp2Reconnect)
+	if readyResp2Reconnect["message"] != "joined game" {
+		t.Fatalf("Expected 'joined game', got: %v", readyResp2Reconnect["message"])
+	}
 
-// 	// Read reconnect response - Player 1
-// 	reconnectResp, err := readMessage(conn1Reconnect, 5*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to read reconnect response for player 1: %v", err)
-// 	}
-// 	t.Logf("Player 1 reconnect response: %v", reconnectResp)
+	gameState2Reconnect, err := waitForGameState(conn2, 5*time.Second)
+	if err != nil {
+		t.Fatalf("Failed to get game state for player 2: %v", err)
+	}
+	t.Logf("Player 2 received game state after reconnect: %v", gameState2Reconnect)
+	if reflect.DeepEqual(gameState2["board"], gameState2Reconnect["board"]) {
+		t.Fatalf("Game board did not change after player 1 move and reconnect! Before: %v, After: %v", gameState2["board"], gameState2Reconnect["board"])
+	}
+	defer conn2.Close()
+	t.Logf("Player 2 reconnected")
 
-// 	// Verify reconnection message
-// 	if reconnectResp["message"] != "Reconnected to old session" {
-// 		t.Errorf("Expected 'Reconnected to old session', got: %v", reconnectResp["message"])
-// 	}
-
-// 	// Wait for game state after reconnect
-// 	t.Logf("Waiting for game state after reconnect...")
-// 	reconnectGameState, err := waitForGameState(conn1Reconnect, 10*time.Second)
-// 	if err != nil {
-// 		t.Fatalf("Failed to get game state after reconnect: %v", err)
-// 	}
-// 	t.Logf("Player 1 received game state after reconnect: %v", reconnectGameState)
-
-// 	// Verify the game state is the same as before disconnection
-// 	if reconnectGameState["board"] != initialBoard {
-// 		t.Errorf("Game board changed after reconnect! Before: %v, After: %v", initialBoard, reconnectGameState["board"])
-// 	}
-// 	if reconnectGameState["currPlayer"] != initialCurrPlayer {
-// 		t.Errorf("Current player changed after reconnect! Before: %v, After: %v", initialCurrPlayer, reconnectGameState["currPlayer"])
-// 	}
-// 	if reconnectGameState["state"] != initialState {
-// 		t.Errorf("Game state changed after reconnect! Before: %v, After: %v", initialState, reconnectGameState["state"])
-// 	}
-// 	t.Logf("Game state matches after reconnect - test passed!")
-// }
+}
