@@ -3,6 +3,7 @@ var playerName = ""
 var playerSlot = ""
 var currPlayer = ""
 var currSlot = "RED"
+var readyMessageSent = false
 
 const getSessionId = async () => {
 
@@ -47,13 +48,16 @@ const updatePlayerTurn = (playerHeadingID) => {
 
 const joinUIUpdate = (messageData) => {
 
+    if (readyMessageSent) {
+        document.getElementById("game").style.display = 'block';
+        return;
+    }
     document.getElementById("homePlayer").innerHTML = messageData["player1"];
     document.getElementById("awayPlayer").innerHTML = messageData["player2"];
     document.getElementById("homePlayerColor").classList.add(messageData["player1Color"].toLowerCase() + '-circle');
     document.getElementById("awayPlayerColor").classList.add(messageData["player2Color"].toLowerCase() + '-circle');
 
     document.getElementById("waitingScreen").hide();
-    document.getElementById("game").style.display = 'block';
     document.getElementById("rematchModal").style.display = "none"
     document.getElementById("gameOverModal").style.display = "none"
     document.querySelector(".main").classList = "main"
@@ -177,6 +181,7 @@ const onClickJoin = () => {
     document.getElementById("waitingScreen").show();
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({type: "ready", name: playerName}))
+        readyMessageSent = true;
         setInterval(() => {sendPing(playerName)}, 5000);
         addColumnClickListeners()
     } else {
