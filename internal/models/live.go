@@ -3,6 +3,7 @@ package models
 import (
 	"4connect/internal/game"
 	"fmt"
+	"math/rand"
 
 	"errors"
 	"sync"
@@ -19,6 +20,10 @@ const (
 	RematchMessageType      = "rematch"
 	GetGameStateMessageType = "get_game_state"
 	ChatMessageType         = "chat"
+	SessionStateMessageType = "session_state"
+	GameStateMessageType    = "game_state"
+	GameOverMessageType     = "game_over"
+	ErrorMessageType        = "error"
 )
 
 type GameState struct {
@@ -63,12 +68,22 @@ const (
 	SessionStateClosed  = "closed"
 )
 
+type RematchSession struct {
+	Player1Accepted bool
+	Player2Accepted bool
+	Time            int64
+}
+
 type Session struct {
 	Game        *game.Game
 	State       string             // Session States: init, live, ended
 	connections map[string]*Player // Mapping to session id to player
 	players     map[string]*Player // Mapping to player id to player
 	messages    chan interface{}
+	Rematch     *RematchSession // Rematch only exists when in rematch state
+	matchCount  int             // Count of matches played in the session
+	player1Wins int             // Count of wins for player 1
+	player2Wins int             // Count of wins for player 2
 	mu          sync.Mutex
 }
 
@@ -80,6 +95,50 @@ func MakeSession() *Session {
 		messages:    make(chan interface{}, 100),
 		mu:          sync.Mutex{},
 		Game:        nil,
+		Rematch:     nil,
+		matchCount:  0,
+		player1Wins: 0,
+		player2Wins: 0,
+	}
+}
+
+func (s *Session) StartNewGame(randomize bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// randomize the player1 and player2
+	var newGame *game.Game
+	var err error
+	if randomize {
+		if rand.Intn(2) == 0 {
+			newGame, err = game.NewGame(s.Game.Player1, s.Game.Player2)
+		} else {
+			newGame, err = game.NewGame(s.Game.Player2, s.Game.Player1)
+		}
+	} else {
+		newGame, err = game.NewGame(s.Game.Player1, s.Game.Player2)
+	}
+	if err != nil {
+		return
+	}
+	s.Game = newGame
+	s.State = SessionStateLive
+}
+
+func (s *Session) ProcessRematchRequest(playerId string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.Rematch == nil {
+		s.Rematch = &RematchSession{
+			Player1Accepted: false,
+			Player2Accepted: false,
+			Time:            time.Now().UnixMilli(),
+		}
+	}
+	if playerId == s.Game.Player1 {
+		s.Rematch.Player1Accepted = true
+	} else {
+		s.Rematch.Player2Accepted = true
 	}
 }
 
@@ -166,39 +225,44 @@ func (s *Session) GetConnection(sessionId string) (*Player, error) {
 	return player, nil
 }
 
-func (s *Session) AddPlayerToGame(sessionId string, name string) (*Player, error) {
+func (s *Session) AddPlayerToGame(sessionId string, name string) (*Player, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	player, ok := s.connections[sessionId]
 	if !ok {
-		return nil, errors.New("Player does not exist")
+		return nil, false, errors.New("Player does not exist")
 	}
+	// Set player name first
+	player.Name = name
 
+	gameStarted := false
 	if s.Game == nil {
 		game, err := game.NewGame(player.ID, "")
 		if err != nil {
-			return nil, errors.New("Failed to create game")
+			return nil, false, errors.New("Failed to create game")
 		}
 		s.Game = game
 		player.Type = ActivePlayerType
-		player.Name = name
-		fmt.Println("Game Player 1: ", player.Name)
-	} else if s.Game.Player2 == "" {
-		game, err := game.NewGame(s.Game.Player1, player.ID)
-		if err != nil {
-			return nil, errors.New("Failed to create game")
-		}
-		s.Game = game
-		player.Type = ActivePlayerType
-		player.Name = name
+
+		fmt.Println("Game Player 1: ", player.Name, "ID:", player.ID)
+	} else if s.Game.Player2 == "" && s.Game.Player1 != "" && s.Game.Player1 != player.ID {
+		s.Game.Player2 = player.ID
 		s.State = SessionStateLive
+		player.Type = ActivePlayerType
+		gameStarted = true
 		fmt.Println("Game Player 2: ", player.Name)
 		fmt.Println("Game started", s.Game.Player1, s.Game.Player2)
 	} else {
-		fmt.Println(s.Game.Player1, s.Game.Player2)
-
+		gameStarted = true
+		fmt.Println("Player is already in the game or game is already started")
 	}
-	return player, nil
+	return player, gameStarted, nil
+}
+
+func (s *Session) GetState() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.State
 }
 
 func (s *Session) GetGameWinner() string {
@@ -212,20 +276,78 @@ func (s *Session) GetGameWinner() string {
 	return ""
 }
 
-func (s *Session) BroadcastGameState() {
-	// Locking
-
-	fmt.Println("Broadcasting Game State")
-	currentPlayer := ""
+func (s *Session) GetPlayerStatus() (string, string) {
+	player1Status := "live"
+	player2Status := "live"
 	player1, err := s.GetPlayer(s.Game.Player1)
 	if err != nil {
+		player1Status = "disconnected"
+	}
+	player2, err := s.GetPlayer(s.Game.Player2)
+	if err != nil {
+		player2Status = "disconnected"
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if player1 != nil && player1.Time-time.Now().UnixMilli() > 15000 {
+		player1Status = "disconnected"
+	}
+	if player2 != nil && player2.Time-time.Now().UnixMilli() > 15000 {
+		player2Status = "disconnected"
+	}
+	return player1Status, player2Status
+}
+
+func (s *Session) GetSessionState() (map[string]interface{}, error) {
+	player1Status, player2Status := s.GetPlayerStatus()
+	return map[string]interface{}{
+		"type":             SessionStateMessageType,
+		"state":            s.State,
+		"match_count":      s.matchCount,
+		"player1_wins":     s.player1Wins,
+		"player2_wins":     s.player2Wins,
+		"player1Status":    player1Status,
+		"player2Status":    player2Status,
+		"connection_count": s.GetConnectionCount(),
+	}, nil
+}
+
+func (s *Session) BroadcastSessionState() {
+	message, err := s.GetSessionState()
+	fmt.Println("We are going to broadcast the session state: ", message)
+	if err != nil {
+		return
+	}
+	s.BroadcastMessage(message)
+}
+
+func (s *Session) BroadcastGameState() {
+	// Locking
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Safety check: game must exist and have both players
+	if s.Game == nil {
+		fmt.Println("BroadcastGameState: Game is nil")
+		return
+	}
+	if s.Game.Player1 == "" || s.Game.Player2 == "" {
+		fmt.Println("BroadcastGameState: Game does not have both players yet. Player1:", s.Game.Player1, "Player2:", s.Game.Player2)
+		return
+	}
+	fmt.Println("Broadcasting Game State")
+	currentPlayer := ""
+	player1, ok := s.players[s.Game.Player1]
+	if !ok {
+		fmt.Println("Player 1 does not exist")
 		return
 	}
 	fmt.Println("Broadcasting Game State Player 1")
 	fmt.Println("Player 1: ", player1.Name)
-	fmt.Println("Player 2 ID: ", s.Game.Player2)
-	player2, err := s.GetPlayer(s.Game.Player2)
-	if err != nil {
+	player2, ok := s.players[s.Game.Player2]
+	if !ok {
+		fmt.Println("Player 2 does not exist")
 		return
 	}
 	fmt.Println("Broadcasting Game State Player 2")
@@ -234,10 +356,14 @@ func (s *Session) BroadcastGameState() {
 	} else {
 		currentPlayer = "player2"
 	}
-
-	winner := s.GetGameWinner()
+	winner := ""
+	if s.Game.GetWinner() == s.Game.Player1 {
+		winner = "player1"
+	} else if s.Game.GetWinner() == s.Game.Player2 {
+		winner = "player2"
+	}
 	message := map[string]interface{}{
-		"message":          "Game State",
+		"type":             GameStateMessageType,
 		"board":            s.Game.GetBoard(),
 		"currPlayer":       currentPlayer,
 		"player1":          player1.Name,
@@ -246,10 +372,9 @@ func (s *Session) BroadcastGameState() {
 		"player2Color":     "YELLOW",
 		"winner":           winner,
 		"state":            s.State,
-		"connection_count": s.GetConnectionCount(),
+		"connection_count": len(s.connections),
 	}
 	s.AddToMessageQueue(message)
-	s.mu.Lock()
 	// Collect connections and player info while holding the lock
 	connections := make([]struct {
 		Conn     *websocket.Conn
@@ -263,36 +388,112 @@ func (s *Session) BroadcastGameState() {
 			}{player.Conn, player.ID})
 		}
 	}
-	s.mu.Unlock()
+
 	for _, player := range connections {
 		switch {
 		case player.PlayerID == s.Game.Player1:
 			message["you"] = "player1"
-			player.Conn.WriteJSON(message)
 		case player.PlayerID == s.Game.Player2:
 			message["you"] = "player2"
-			player.Conn.WriteJSON(message)
 		default:
 			message["you"] = "none"
-			player.Conn.WriteJSON(message)
+		}
+		// Safely write with error handling
+		if err := player.Conn.WriteJSON(message); err != nil {
+			// Connection is likely closed, log and continue
+			fmt.Printf("Error writing to connection for player %s: %v\n", player.PlayerID, err)
+			continue
 		}
 	}
+
 }
 
 func (s *Session) BroadcastMessage(message interface{}) {
 	fmt.Println("Broadcasting Message", message)
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	fmt.Println("Lock acquired")
-	connections := make([]*websocket.Conn, 0, len(s.connections))
-	for _, player := range s.connections {
+	connections := make([]struct {
+		Conn     *websocket.Conn
+		PlayerId string
+	}, 0, len(s.players))
+	for _, player := range s.players {
 		if player.Conn != nil {
-			connections = append(connections, player.Conn)
+			connections = append(connections, struct {
+				Conn     *websocket.Conn
+				PlayerId string
+			}{player.Conn, player.ID})
 		}
 	}
-	s.mu.Unlock()
 
-	for _, conn := range connections {
-		conn.WriteJSON(message)
+	for _, connection := range connections {
+		if err := connection.Conn.WriteJSON(message); err != nil {
+			fmt.Println("Failed to write message to connection: to Player id ", connection.PlayerId, " with error: ", err)
+			continue
+		}
 	}
 	fmt.Println("Message broadcasted")
+}
+
+func (s *Session) SendMessageToPlayer(playerId string, message interface{}) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	player, ok := s.players[playerId]
+	if !ok {
+		return errors.New("Player does not exist")
+	}
+	player.Conn.WriteJSON(message)
+	return nil
+}
+
+func (s *Session) SendMessageToSession(sessionId string, message interface{}) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	player, ok := s.connections[sessionId]
+	if !ok {
+		return errors.New("Player does not exist")
+	}
+	player.Conn.WriteJSON(message)
+	return nil
+}
+
+func (s *Session) ProcessGameOver() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.State = SessionStateRematch
+	s.matchCount++
+	// Need to fix this
+	if s.Game.GetWinner() == s.Game.Player1 {
+		s.player1Wins++
+	} else {
+		s.player2Wins++
+	}
+}
+
+func (s *Session) GetGameOverMessage() map[string]interface{} {
+
+	if s.Game.GetWinner() == "" {
+		return map[string]interface{}{
+			"type":    GameOverMessageType,
+			"message": "Game Over",
+			"winner":  "draw",
+		}
+	} else if s.Game.GetWinner() == s.Game.Player1 {
+		return map[string]interface{}{
+			"type":    GameOverMessageType,
+			"message": "Game Over",
+			"winner":  "player1",
+		}
+	} else {
+		return map[string]interface{}{
+			"type":    GameOverMessageType,
+			"message": "Game Over",
+			"winner":  "player2",
+		}
+	}
+}
+
+func (s *Session) BroadcastGameOver() {
+	message := s.GetGameOverMessage()
+	s.BroadcastMessage(message)
 }

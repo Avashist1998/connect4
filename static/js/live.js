@@ -3,7 +3,10 @@ var playerName = ""
 var playerSlot = ""
 var currPlayer = ""
 var currSlot = "RED"
-var readyMessageSent = false
+var playerType = "" // "active" or "passive"
+var matchCount = 0
+var player1Wins = 0
+var player2Wins = 0
 
 const getSessionId = async () => {
 
@@ -48,16 +51,13 @@ const updatePlayerTurn = (playerHeadingID) => {
 
 const joinUIUpdate = (messageData) => {
 
-    if (readyMessageSent) {
-        document.getElementById("game").style.display = 'block';
-        return;
-    }
     document.getElementById("homePlayer").innerHTML = messageData["player1"];
     document.getElementById("awayPlayer").innerHTML = messageData["player2"];
     document.getElementById("homePlayerColor").classList.add(messageData["player1Color"].toLowerCase() + '-circle');
     document.getElementById("awayPlayerColor").classList.add(messageData["player2Color"].toLowerCase() + '-circle');
 
     document.getElementById("waitingScreen").hide();
+    document.getElementById("game").style.display = 'block';
     document.getElementById("rematchModal").style.display = "none"
     document.getElementById("gameOverModal").style.display = "none"
     document.querySelector(".main").classList = "main"
@@ -97,6 +97,10 @@ const gameOverUpdate = (messageData) => {
     } else {
         document.getElementById("gameOverHeading").innerHTML = `Winner: ${messageData.winner}`
     }
+
+    if (playerType == "passive") {
+        document.getElementById("rematchButton").style.display = "none"
+    }
 }
 
 // Initialize WebSocket connection and set up message handling
@@ -116,8 +120,10 @@ const initializeSocket = async () => {
     socket.onmessage = function (event) {
         let messageData = JSON.parse(event.data);
         console.log(messageData)
-        if (messageData.message == "Game State") {
+        if (messageData.type == "game_state") {
             joinUIUpdate(messageData);
+        } else if (messageData.type == "joined_game") {
+            playerType = messageData.type;
         } else if (messageData.type == "chat") {
             const chatBox = document.getElementById('chat-box');
             chatBox.addMessage(messageData);
@@ -125,12 +131,20 @@ const initializeSocket = async () => {
             const boardElement = document.getElementById('game-board');
             boardElement.updateGrid(messageData.board);
             updatePlayerTurn(messageData.currSlot)
-        } else if (messageData.message == "Game Over") {
+        } else if (messageData.type == "game_over") {
             gameOverUpdate(messageData)
-        } else if (messageData.message == "ReMatch Request") {
+        } else if (messageData.type == "rematch") {
             document.getElementById("gameOverModal").style.display = "none"
             document.getElementById("rematchModal").style.display = "block"
+        } else if (messageData.type == "session_state") {
+            matchCount = messageData.match_count
+            player1Wins = messageData.player1_wins
+            player2Wins = messageData.player2_wins
+            document.getElementById("matchCount").innerHTML = matchCount
+            document.getElementById("player1Wins").innerHTML = player1Wins
+            document.getElementById("player2Wins").innerHTML = player2Wins
         }
+
     };
 
     socket.onerror = function (error) {
@@ -168,6 +182,18 @@ getSessionId().then(() => {
     if (name !== null) {
         document.getElementById("playerName").value = name;
     }
+    
+    // Enable/disable join button based on input
+    const playerNameInput = document.getElementById("playerName");
+    const joinButton = document.getElementById("joinButton");
+    
+    const updateJoinButtonState = () => {
+        joinButton.disabled = playerNameInput.value.trim() === "";
+    };
+    
+    playerNameInput.addEventListener("input", updateJoinButtonState);
+    updateJoinButtonState(); // Set initial state
+    
     initializeSocket()
 }).catch(() => {
     console.error("Something went wrong");
@@ -181,7 +207,6 @@ const onClickJoin = () => {
     document.getElementById("waitingScreen").show();
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({type: "ready", name: playerName}))
-        readyMessageSent = true;
         setInterval(() => {sendPing(playerName)}, 5000);
         addColumnClickListeners()
     } else {
@@ -198,7 +223,7 @@ const handleClickRematch = () => {
     const matchID = window.location.href.split("/").pop()
     let playerName = document.getElementById("homePlayer").innerHTML;
     if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({Type: "rematch", Player: playerName, Message: "request", MatchID: matchID}));
+        socket.send(JSON.stringify({type: "rematch"}));
         document.getElementById("waitingScreen").updateMessage("Waiting for rematch message")
         document.getElementById("waitingScreen").show();
         document.getElementById("gameOverModal").style.display = "none"

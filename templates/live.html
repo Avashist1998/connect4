@@ -22,7 +22,7 @@
                             <div class="form-group">
                                 <h2>Join Game</h2>
                                 <input id="playerName" placeholder="You Name" type="text" class="form-control" />
-                                <button onclick=onClickJoin() class="btn btn-primary">Join</button>
+                                <button id="joinButton" onclick=onClickJoin() class="btn btn-primary" disabled>Join</button>
                             </div>
                         </div>
                     </div>
@@ -43,6 +43,23 @@
         </div>
     <waiting-screen id="waitingScreen" message="Waiting for player..."></waiting-screen>
     <div id="game" style="display: none;">
+        <div id="matchStats" class="match-stats-sidebar">
+            <div class="match-stats-card">
+                <div class="match-stats-header">Match Stats</div>
+                <div class="match-stats-item">
+                    <span class="match-stats-label">Matches</span>
+                    <span id="matchCount" class="match-stats-value">0</span>
+                </div>
+                <div class="match-stats-item">
+                    <span class="match-stats-label">Player 1 Wins</span>
+                    <span id="player1Wins" class="match-stats-value">0</span>
+                </div>
+                <div class="match-stats-item">
+                    <span class="match-stats-label">Player 2 Wins</span>
+                    <span id="player2Wins" class="match-stats-value">0</span>
+                </div>
+            </div>
+        </div>
         <div id="viewCountContainer" class="view-count-sidebar">
             <div class="view-count-badge">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" class="view-icon">

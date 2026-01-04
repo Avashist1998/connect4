@@ -1,7 +1,7 @@
 const config = {
 
     SSL : false,
-    BASE_URL : "0.0.0.0:9080",
+    BASE_URL : "127.0.0.1:9080",
 
     // Computed URLs
     get httpURL() {
