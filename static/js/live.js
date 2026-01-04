@@ -194,6 +194,40 @@ getSessionId().then(() => {
     playerNameInput.addEventListener("input", updateJoinButtonState);
     updateJoinButtonState(); // Set initial state
     
+    // Mobile: Make match stats collapsible
+    const setupMatchStatsCollapsible = () => {
+        const matchStatsCard = document.getElementById("matchStatsCard");
+        const matchStatsHeader = document.getElementById("matchStatsHeader");
+        if (!matchStatsCard || !matchStatsHeader) return;
+        
+        // Store reference to avoid re-adding listeners
+        if (matchStatsHeader.dataset.hasListener === 'true') return;
+        
+        if (window.innerWidth <= 768) {
+            // Start collapsed on mobile
+            matchStatsCard.classList.remove("expanded");
+            matchStatsHeader.addEventListener("click", () => {
+                matchStatsCard.classList.toggle("expanded");
+            });
+        } else {
+            // Start expanded on desktop
+            matchStatsCard.classList.add("expanded");
+        }
+        matchStatsHeader.dataset.hasListener = 'true';
+    };
+    
+    // Setup when DOM is ready, and retry if elements aren't available yet
+    const trySetupStats = () => {
+        if (document.getElementById("matchStatsCard")) {
+            setupMatchStatsCollapsible();
+        } else {
+            setTimeout(trySetupStats, 100);
+        }
+    };
+    
+    trySetupStats();
+    window.addEventListener("resize", setupMatchStatsCollapsible);
+    
     initializeSocket()
 }).catch(() => {
     console.error("Something went wrong");
